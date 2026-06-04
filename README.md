@@ -40,19 +40,21 @@ Aplikasi dibangun menggunakan framework Laravel dengan database MySQL serta mene
 
 ### Dashboard Admin:
 *Dashboard
+
 <img width="1917" height="871" alt="image" src="https://github.com/user-attachments/assets/ec4b7ca0-4127-47ab-afa2-ae128ec8c276" />
 
 *Data Servis
+
 <img width="1919" height="853" alt="image" src="https://github.com/user-attachments/assets/156b4854-86df-4a1d-a240-0af32d83b99e" />
 
-
-
-
 *Detail Servis
+
 <img width="633" height="797" alt="image" src="https://github.com/user-attachments/assets/7f722b31-e4b6-45eb-8fe5-bae6deadf696" />
 
 
 *Invoice
+
+
 <img width="364" height="841" alt="image" src="https://github.com/user-attachments/assets/016373e7-6f27-4d04-ab42-e83c3b6f450c" />
 
 *noted: yang membedakan dashboard owner yaitu, terdapat fitur laporan servis dan statistik servis/penjualan.
@@ -64,8 +66,17 @@ Aplikasi dibangun menggunakan framework Laravel dengan database MySQL serta mene
 *<img width="1890" height="839" alt="image" src="https://github.com/user-attachments/assets/2b84c930-485b-4389-a3f0-722039d67ccd" />
 
 
+## Permasalahan:
+Project ini dikembangkan sebagai tugas akhir/Skripsi untuk membantu digitalisasi proses layanan servis smartphone pada Phone Repair yang sebelumnya masih menggunakan pencatatan manual.
+Melalui project ini saya mengimplementasikan:
+- Authentication & Authorization
+- CRUD Operations
+- Relational Database Design
+- PDF Generation
+- Dashboard & Reporting
+- MVC Architecture
 
-
-## Tujuan Pengembanganas
-
+## Tujuan Pengembangan
 Sistem ini dibuat untuk meningkatkan efisiensi pengelolaan layanan servis smartphone, mengurangi kesalahan pencatatan data secara manual, serta mempermudah proses monitoring dan pelaporan data servis pada Phone Repair.
+
+

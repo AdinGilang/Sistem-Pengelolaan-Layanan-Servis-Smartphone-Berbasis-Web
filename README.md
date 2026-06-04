@@ -41,10 +41,14 @@ Aplikasi dibangun menggunakan framework Laravel dengan database MySQL serta mene
 ### Dashboard Admin:
 *Dashboard
 <img width="1917" height="871" alt="image" src="https://github.com/user-attachments/assets/ec4b7ca0-4127-47ab-afa2-ae128ec8c276" />
+
 *Data Servis
 <img width="1919" height="853" alt="image" src="https://github.com/user-attachments/assets/156b4854-86df-4a1d-a240-0af32d83b99e" />
+
 *Detail Servis
 <img width="633" height="797" alt="image" src="https://github.com/user-attachments/assets/7f722b31-e4b6-45eb-8fe5-bae6deadf696" />
+
+
 *Invoice
 <img width="364" height="841" alt="image" src="https://github.com/user-attachments/assets/016373e7-6f27-4d04-ab42-e83c3b6f450c" />
 

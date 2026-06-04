@@ -45,6 +45,9 @@ Aplikasi dibangun menggunakan framework Laravel dengan database MySQL serta mene
 *Data Servis
 <img width="1919" height="853" alt="image" src="https://github.com/user-attachments/assets/156b4854-86df-4a1d-a240-0af32d83b99e" />
 
+
+
+
 *Detail Servis
 <img width="633" height="797" alt="image" src="https://github.com/user-attachments/assets/7f722b31-e4b6-45eb-8fe5-bae6deadf696" />
 

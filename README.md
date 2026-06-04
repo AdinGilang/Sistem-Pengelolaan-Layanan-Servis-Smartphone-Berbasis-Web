@@ -1,10 +1,12 @@
 # Sistem Pengelolaan Layanan Servis Smartphone Berbasis Web
 
-Sistem ini merupakan aplikasi berbasis web yang dirancang untuk membantu proses pengelolaan layanan servis smartphone pada Phone Repair. Aplikasi dikembangkan untuk mempermudah pencatatan data servis, pengelolaan pelanggan, pemantauan status perbaikan, hingga pembuatan laporan servis secara lebih cepat, terstruktur, dan efisien.
+Sistem Pengelolaan Layanan Servis Smartphone Berbasis Web merupakan aplikasi yang dikembangkan untuk membantu digitalisasi proses layanan servis pada Phone Repair. Sistem ini memudahkan pengelolaan data pelanggan, pencatatan servis, pemantauan status perbaikan, hingga pembuatan laporan dan invoice secara terkomputerisasi.
 
-Sistem memiliki dua hak akses pengguna, yaitu Admin dan Owner. Admin bertugas mengelola data servis, menginput kerusakan, memperbarui status perbaikan, serta mencetak invoice servis. Sementara itu, Owner dapat memantau dashboard, laporan, statistik, dan data servis tanpa memiliki hak untuk mengubah data.
+Aplikasi memiliki dua peran pengguna, yaitu Admin dan Owner. Admin dapat mengelola data pelanggan, data servis, status perbaikan, serta mencetak invoice servis. Sementara itu, Owner dapat memantau dashboard, laporan, statistik, dan aktivitas servis secara real-time tanpa hak untuk mengubah data.
 
-Aplikasi dibangun menggunakan framework Laravel dengan database MySQL serta menerapkan konsep arsitektur MVC (Model View Controller). Metode pengembangan sistem menggunakan model Waterfall yang terdiri dari tahap analisis kebutuhan, desain sistem, implementasi, pengujian, dan maintenance.
+Sistem dibangun menggunakan Laravel sebagai framework backend, MySQL sebagai database, serta menerapkan arsitektur MVC (Model-View-Controller) untuk menghasilkan aplikasi yang terstruktur, mudah dikembangkan, dan mudah dipelihara.
+
+Melalui proyek ini, saya mengimplementasikan berbagai konsep pengembangan web, seperti autentikasi pengguna, manajemen data berbasis CRUD, relasi database, pembuatan laporan, dashboard statistik, serta generasi invoice dalam format PDF.
 
 ## Fitur Utama
 

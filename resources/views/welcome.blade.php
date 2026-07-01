@@ -388,7 +388,7 @@
 
                 <p class="hero-desc">
                     Platform manajemen servis handphone yang lengkap. Pantau status perbaikan,
-                    kelola data pelanggan, dan tingkatkan produktivitas bengkel Anda — semua dalam satu dasbor.
+                    kelola data pelanggan, dan tingkatkan produktivitas servis Anda — semua dalam satu dasbor.
                 </p>
 
                 <div class="hero-cta">
@@ -487,7 +487,7 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#4361ee" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
                                 </div>
                                 <div class="repair-info">
-                                    <div class="repair-name">putra</div>
+                                    <div class="repair-name">Prabowo Sayang Buna Teddy</div>
                                     <div class="repair-type">LCD + backdoor</div>
                                 </div>
                                 <span class="repair-badge badge-proses">Proses</span>
@@ -507,7 +507,7 @@
                                     <svg viewBox="0 0 24 24" fill="none" stroke="#9c4fe3" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
                                 </div>
                                 <div class="repair-info">
-                                    <div class="repair-name">dicky</div>
+                                    <div class="repair-name">Jokowi</div>
                                     <div class="repair-type">LCD</div>
                                 </div>
                                 <span class="repair-badge badge-proses">Proses</span>

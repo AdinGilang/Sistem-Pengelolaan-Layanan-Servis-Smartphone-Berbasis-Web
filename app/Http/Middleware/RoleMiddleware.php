@@ -7,11 +7,6 @@ use Illuminate\Http\Request;
 
 class RoleMiddleware
 {
-    /**
-     * Handle an incoming request.
-     * Support single role: role:admin
-     * Support multi role:  role:admin|owner
-     */
     public function handle($request, Closure $next, $role)
     {
         $allowedRoles = explode('|', $role);

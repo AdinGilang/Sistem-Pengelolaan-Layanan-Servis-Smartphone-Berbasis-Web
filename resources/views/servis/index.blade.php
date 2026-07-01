@@ -1,5 +1,6 @@
 <x-app-layout>
     <x-slot name="header">Data Servis</x-slot>
+    
 
     @php $userRole = auth()->user()->role ?? 'admin'; @endphp
 

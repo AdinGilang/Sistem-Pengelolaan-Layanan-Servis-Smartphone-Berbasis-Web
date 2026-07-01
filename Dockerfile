@@ -21,12 +21,21 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
+    libpng-dev
     libonig-dev \
     libxml2-dev \
-    && docker-php-ext-install pdo_mysql zip
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo_mysql zip gd
 
 # Enable Apache Rewrite
 RUN a2enmod rewrite
+
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf \
+    /etc/apache2/apache2.conf \
+    /etc/apache2/conf-available/*.conf
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -37,7 +46,14 @@ COPY . .
 
 COPY --from=node_builder /app/public/build ./public/build
 
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction
+    
+RUN php artisan config:clear
+RUN php artisan route:clear
+RUN php artisan view:clear
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 

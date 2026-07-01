@@ -1,17 +1,48 @@
-FROM richarvey/nginx-php-fpm:3.1.6
+# ---------- Stage 1: Build frontend ----------
+FROM node:22 AS node_builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+RUN npm run build
+
+# ---------- Stage 2: PHP ----------
+FROM php:8.3-apache
+
+# Install PHP extensions
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    zip \
+    libzip-dev \
+    libpng-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    libonig-dev \
+    libxml2-dev \
+    && docker-php-ext-install pdo_mysql zip
+
+# Enable Apache Rewrite
+RUN a2enmod rewrite
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
 COPY . .
 
+COPY --from=node_builder /app/public/build ./public/build
+
 RUN composer install --no-dev --optimize-autoloader
 
-RUN npm install && npm run build
+RUN chown -R www-data:www-data storage bootstrap/cache
 
-RUN cp .env.example .env || true
+RUN chmod -R 775 storage bootstrap/cache
 
-RUN php artisan key:generate --force || true
+EXPOSE 80
 
-RUN chown -R nginx:nginx storage bootstrap/cache
-
-EXPOSE 8080
+CMD ["apache2-foreground"]

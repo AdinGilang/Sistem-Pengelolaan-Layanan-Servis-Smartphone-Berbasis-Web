@@ -440,13 +440,10 @@
                     Cek Status Servis
                 </a>
 
-                {{-- Tombol masuk staf sengaja tidak ditampilkan di sini.
-                     Halaman ini khusus pelanggan; staf mendapat tautan
-                     langsung ke /login secara terpisah, bukan lewat tombol
-                     yang tampil ke setiap pengunjung publik. --}}
-                @auth
-                    <a href="{{ route('dashboard') }}" class="btn btn--ghost btn--lg">Buka Dashboard</a>
-                @endauth
+                {{-- Tombol masuk staf / Dashboard sengaja tidak ditampilkan di
+                     sini, tanpa terkecuali untuk staf yang sedang login.
+                     Halaman ini murni pelanggan; staf mendapat tautan
+                     langsung ke /login secara terpisah. --}}
             </div>
 
             {{-- Angka di bawah ini dibaca langsung dari basis data, bukan angka

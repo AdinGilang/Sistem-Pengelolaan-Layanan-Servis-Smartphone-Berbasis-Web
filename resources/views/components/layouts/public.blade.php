@@ -51,15 +51,10 @@
                 Cek Status Servis
             </a>
 
-            {{-- Tombol "Masuk" sengaja dihilangkan dari halaman publik. Halaman
-                 ini khusus untuk pelanggan; staf mengakses panel lewat tautan
-                 langsung ke /login yang diberikan terpisah, bukan lewat tombol
-                 yang tampil ke semua pengunjung. Bila staf kebetulan sudah
-                 login di browser yang sama, tautan Dashboard tetap muncul agar
-                 tidak perlu login ulang. --}}
-            @auth
-                <a href="{{ route('dashboard') }}" class="btn btn--solid">Dashboard</a>
-            @endauth
+            {{-- Tombol "Masuk" maupun "Dashboard" sengaja dihilangkan dari
+                 halaman publik ini, tanpa terkecuali untuk staf yang sedang
+                 login. Halaman ini murni untuk pelanggan; staf mengakses
+                 panel lewat tautan /login yang diberikan terpisah. --}}
         </nav>
     </header>
 

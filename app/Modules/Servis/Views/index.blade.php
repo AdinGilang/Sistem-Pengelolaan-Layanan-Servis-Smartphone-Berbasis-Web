@@ -1,6 +1,44 @@
 <x-app-layout>
     <x-slot name="header">Data Servis</x-slot>
-    
+
+    @push('styles')
+    <style>
+        /* Kolom Aksi — tombol ikon berwarna menggantikan tautan teks
+           ("Detail Invoice Edit Hapus") yang dulu ditumpuk rapat tanpa
+           jarak jelas, sulit dipindai sekilas di baris tabel yang padat. */
+        .aksi-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .aksi-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background-color .15s ease, transform .15s ease;
+        }
+
+        .aksi-btn svg { width: 15px; height: 15px; }
+        .aksi-btn:hover { transform: translateY(-1px); }
+
+        .aksi-btn--blue   { background: rgba(59, 91, 219, .1);  color: #3b5bdb; }
+        .aksi-btn--blue:hover   { background: rgba(59, 91, 219, .18); }
+        .aksi-btn--purple { background: rgba(147, 51, 234, .1); color: #9333ea; }
+        .aksi-btn--purple:hover { background: rgba(147, 51, 234, .18); }
+        .aksi-btn--amber  { background: rgba(180, 83, 9, .1);   color: #b45309; }
+        .aksi-btn--amber:hover  { background: rgba(180, 83, 9, .18); }
+        .aksi-btn--red    { background: rgba(185, 28, 28, .1);  color: #b91c1c; }
+        .aksi-btn--red:hover    { background: rgba(185, 28, 28, .18); }
+    </style>
+    @endpush
 
     {{-- Tombol aksi ditentukan ServisPolicy, bukan lagi perbandingan string
          peran di dalam template. Sumber aturannya jadi satu dengan yang
@@ -194,23 +232,57 @@
                                 <x-status-badge :status="$s->status" />
                             </td>
 
-                            {{-- Aksi --}}
-                            <td class="px-4 py-4 text-center space-x-2 whitespace-nowrap">
-                                <a href="{{ route('servis.show', $s->id) }}" class="text-blue-600 hover:underline text-xs">Detail</a>
-                                <a href="{{ route('invoice.show', $s->id) }}" class="text-purple-600 hover:underline text-xs">Invoice</a>
+                            {{-- Aksi. Sebelumnya empat tautan teks polos
+                                 ("Detail Invoice Edit Hapus") ditumpuk rapat
+                                 tanpa jarak yang jelas, sulit dipindai sekilas
+                                 dan mudah salah klik di baris yang padat.
+                                 Sekarang tiap aksi jadi tombol ikon berwarna
+                                 dengan tooltip, konsisten satu sama lain. --}}
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <div class="aksi-group">
+                                    <a href="{{ route('servis.show', $s->id) }}"
+                                       class="aksi-btn aksi-btn--blue" title="Lihat detail" aria-label="Lihat detail {{ $s->kode_unik }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </a>
+                                    <a href="{{ route('invoice.show', $s->id) }}"
+                                       class="aksi-btn aksi-btn--purple" title="Lihat invoice" aria-label="Lihat invoice {{ $s->kode_unik }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h6"/>
+                                        </svg>
+                                    </a>
 
-                                @can('update', $s)
-                                    <a href="{{ route('servis.edit', $s->id) }}" class="text-yellow-600 hover:underline text-xs">Edit</a>
-                                @endcan
+                                    @can('update', $s)
+                                        <a href="{{ route('servis.edit', $s->id) }}"
+                                           class="aksi-btn aksi-btn--amber" title="Ubah data" aria-label="Ubah data {{ $s->kode_unik }}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                                            </svg>
+                                        </a>
+                                    @endcan
 
-                                @can('delete', $s)
-                                    <form action="{{ route('servis.destroy', $s->id) }}" method="POST" class="inline"
-                                          data-konfirmasi="Hapus data servis {{ $s->kode_unik }}? Data masih dapat dipulihkan dari basis data.">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:underline text-xs">Hapus</button>
-                                    </form>
-                                @endcan
+                                    @can('delete', $s)
+                                        <form action="{{ route('servis.destroy', $s->id) }}" method="POST" class="inline"
+                                              data-konfirmasi="Hapus data servis {{ $s->kode_unik }}? Data masih dapat dipulihkan dari basis data.">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="aksi-btn aksi-btn--red" title="Hapus data" aria-label="Hapus data {{ $s->kode_unik }}">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endcan
+                                </div>
                             </td>
 
                         </tr>

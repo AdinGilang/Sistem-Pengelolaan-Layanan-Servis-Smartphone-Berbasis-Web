@@ -189,3 +189,45 @@ test('label bulan dan tahun pada filter laporan tertaut ke dropdown-nya', functi
         ->assertSee('for="laporan-bulan"', false)
         ->assertSee('for="laporan-tahun"', false);
 });
+
+test('kolom aksi Data Servis berupa tombol ikon dengan label yang bisa diakses, bukan tautan teks polos', function () {
+    // Regresi: sebelumnya "Detail Invoice Edit Hapus" ditumpuk sebagai
+    // tautan teks polos tanpa jarak jelas. Setiap tombol sekarang harus
+    // tetap punya nama yang bisa diumumkan pembaca layar (aria-label/title)
+    // meski teksnya sendiri digantikan ikon.
+    $servis = Servis::factory()->create();
+
+    $html = $this->actingAs($this->admin)->get('/servis')->getContent();
+
+    expect($html)->toContain('class="aksi-btn aksi-btn--blue"')
+        ->toContain('class="aksi-btn aksi-btn--purple"')
+        ->toContain('class="aksi-btn aksi-btn--amber"')
+        ->toContain('class="aksi-btn aksi-btn--red"')
+        ->toContain('aria-label="Lihat detail ' . $servis->kode_unik . '"')
+        ->toContain('aria-label="Hapus data ' . $servis->kode_unik . '"');
+});
+
+test('owner tanpa izin ubah/hapus hanya melihat tombol lihat dan invoice', function () {
+    // Dicocokkan lewat atribut class lengkap pada elemennya, bukan sekadar
+    // substring nama kelas — blok <style> di halaman ini juga menuliskan
+    // nama kelas tersebut sebagai selector CSS, jadi substring saja selalu
+    // "ditemukan" pada halaman mana pun terlepas dari tombol mana yang
+    // sungguh-sungguh dirender.
+    Servis::factory()->create();
+
+    $html = $this->actingAs($this->owner)->get('/servis')->getContent();
+
+    expect($html)->toContain('class="aksi-btn aksi-btn--blue"')
+        ->toContain('class="aksi-btn aksi-btn--purple"')
+        ->not->toContain('class="aksi-btn aksi-btn--amber"')
+        ->not->toContain('class="aksi-btn aksi-btn--red"');
+});
+
+test('badge peran di topbar tetap kontras di atas latar putih', function () {
+    // Regresi: warna badge peran dirancang untuk latar navy sidebar (teks
+    // biru muda di atas biru transparan). Badge yang sama juga dipakai di
+    // topbar berlatar putih, membuatnya pucat dan sulit dibaca di sana.
+    $html = $this->actingAs($this->admin)->get('/dashboard')->getContent();
+
+    expect($html)->toContain('.topbar .role-badge.admin');
+});

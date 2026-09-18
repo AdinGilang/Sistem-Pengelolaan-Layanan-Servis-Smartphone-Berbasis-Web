@@ -91,6 +91,16 @@
         .role-badge.admin { background: rgba(59, 91, 219, .25); color: #a9bcff; }
         .role-badge.owner { background: rgba(245, 159, 0, .25); color: #ffd98a; }
 
+        /* Warna di atas kontras dirancang untuk latar navy sidebar. Badge
+           yang sama juga dipakai di topbar yang berlatar putih — warna
+           terang di atas latar terang itu jadi pucat dan sulit dibaca
+           (persis seperti terlihat pada tangkapan layar: "ADMIN" tampak
+           kusam dibanding avatar biru di sampingnya). Aturan ini menimpa
+           warnanya khusus saat berada di dalam topbar, tanpa perlu
+           mengubah markup di halaman mana pun yang memakainya. */
+        .topbar .role-badge.admin { background: var(--blue-wash); color: var(--blue-dark); }
+        .topbar .role-badge.owner { background: var(--amber-wash); color: var(--amber); }
+
         .avatar {
             display: flex;
             align-items: center;

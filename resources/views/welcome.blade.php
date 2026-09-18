@@ -299,13 +299,21 @@
             border-radius: var(--r-lg);
             padding: 24px;
             box-shadow: var(--shadow-sm);
-            transition: border-color .18s ease, box-shadow .18s ease;
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
         }
 
         .feature:hover {
             border-color: rgba(59, 91, 219, .35);
             box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
         }
+
+        /* Jeda bertahap murni CSS — kartu pertama muncul lebih dulu,
+           lalu menyusul satu per satu saat digulir. */
+        .features .reveal:nth-child(1) { transition-delay: 0ms; }
+        .features .reveal:nth-child(2) { transition-delay: 70ms; }
+        .features .reveal:nth-child(3) { transition-delay: 140ms; }
+        .features .reveal:nth-child(4) { transition-delay: 210ms; }
 
         .feature__icon {
             width: 42px;
@@ -390,6 +398,18 @@
             color: var(--muted);
         }
 
+        /* Jawaban yang baru dibuka mendapat sedikit gerakan masuk, satu
+           kali saja saat <details> berpindah ke status terbuka. */
+        .faq__item[open] .faq__answer {
+            animation: fadeUp .25s cubic-bezier(.16, 1, .3, 1) both;
+        }
+
+        .faq .reveal:nth-child(1) { transition-delay: 0ms; }
+        .faq .reveal:nth-child(2) { transition-delay: 60ms; }
+        .faq .reveal:nth-child(3) { transition-delay: 120ms; }
+        .faq .reveal:nth-child(4) { transition-delay: 180ms; }
+        .faq .reveal:nth-child(n+5) { transition-delay: 220ms; }
+
         @media (max-width: 900px) {
             .hero {
                 grid-template-columns: 1fr;
@@ -415,23 +435,23 @@
     {{-- ══════════════════ HERO ══════════════════ --}}
     <section class="hero">
         <div>
-            <p class="hero__eyebrow">
-                <span class="hero__dot" aria-hidden="true"></span>
+            <p class="hero__eyebrow anim-fade-up">
+                <span class="hero__dot pulse-dot" aria-hidden="true"></span>
                 Layanan servis smartphone
             </p>
 
-            <h1 class="hero__title">
+            <h1 class="hero__title anim-fade-up" style="animation-delay:.08s">
                 Lacak servis HP Anda,<br>
                 <em>tanpa perlu bertanya-tanya</em>
             </h1>
 
-            <p class="hero__lead">
+            <p class="hero__lead anim-fade-up" style="animation-delay:.16s">
                 Setiap perangkat yang masuk ke Phone Repair mendapat kode servis sendiri.
                 Cukup masukkan kodenya untuk melihat progres perbaikan, teknisi yang menangani,
                 dan biaya akhirnya — kapan saja, dari perangkat apa saja.
             </p>
 
-            <div class="hero__cta">
+            <div class="hero__cta anim-fade-up" style="animation-delay:.24s">
                 <a href="{{ route('servis.cek') }}" class="btn btn--solid btn--lg">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -448,7 +468,7 @@
 
             {{-- Angka di bawah ini dibaca langsung dari basis data, bukan angka
                  contoh yang ditulis di template seperti sebelumnya. --}}
-            <div class="stats">
+            <div class="stats anim-fade-up" style="animation-delay:.32s">
                 <div class="stats__item">
                     <div class="stats__value">{{ number_format($ringkasan['total'], 0, ',', '.') }}</div>
                     <p class="stats__label">Total unit tercatat</p>
@@ -470,7 +490,7 @@
 
         {{-- Kartu ini bukan gambar hiasan: formulirnya benar-benar mengirim
              ke halaman pelacakan. --}}
-        <div class="tracker">
+        <div class="tracker anim-float-in" style="animation-delay:.18s">
             <div class="tracker__head">
                 <h2 class="tracker__title">Lacak perbaikan Anda</h2>
                 <p class="tracker__sub">Masukkan kode dari nota servis</p>
@@ -534,7 +554,7 @@
         </p>
 
         <div class="features">
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -548,7 +568,7 @@
                 </p>
             </article>
 
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -564,7 +584,7 @@
                 </p>
             </article>
 
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -579,7 +599,7 @@
                 </p>
             </article>
 
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -603,7 +623,7 @@
 
         <div class="faq">
             @foreach ($faq as $item)
-                <details class="faq__item" @if ($loop->first) open @endif>
+                <details class="faq__item reveal" @if ($loop->first) open @endif>
                     <summary>{{ $item['tanya'] }}</summary>
                     <p class="faq__answer">{{ $item['jawab'] }}</p>
                 </details>

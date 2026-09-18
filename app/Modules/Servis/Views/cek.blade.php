@@ -272,7 +272,7 @@
     @endpush
 
     <div class="lacak">
-        <div class="lacak__intro">
+        <div class="lacak__intro anim-fade-up">
             <h1 class="lacak__title">Cek Status Servis</h1>
             <p class="lacak__lead">
                 Masukkan kode servis yang tertera pada nota atau pesan WhatsApp dari staf kami
@@ -280,7 +280,7 @@
             </p>
         </div>
 
-        <div class="card">
+        <div class="card anim-fade-up" style="animation-delay:.08s">
             <div class="card__body">
                 <form method="GET" action="{{ route('servis.cek') }}" class="cari">
                     <label class="sr-only" for="kode">Kode servis</label>
@@ -315,7 +315,7 @@
         </div>
 
         @if ($dicari && ! $servis)
-            <div class="pesan pesan--kosong" role="status">
+            <div class="pesan pesan--kosong anim-fade-up" role="status">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--red)"
                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"
                      style="flex-shrink:0;margin-top:2px;">
@@ -332,7 +332,7 @@
         @endif
 
         @if ($servis)
-            <article class="hasil">
+            <article class="hasil anim-fade-up">
                 <header class="hasil__head">
                     <h2 class="hasil__kode">{{ $servis->kode_unik }}</h2>
                     <p class="hasil__perangkat">
@@ -342,7 +342,16 @@
 
                 <div class="hasil__status">
                     <span class="hasil__status-label">Status saat ini</span>
-                    <span class="badge {{ $statusKelas }}">{{ $servis->status }}</span>
+                    <span class="badge {{ $statusKelas }}">
+                        {{-- Titik berdenyut menandai status yang masih berjalan.
+                             Status "Selesai" tidak lagi berubah, jadi tidak
+                             perlu terasa "hidup". --}}
+                        @unless ($servis->status === 'Selesai')
+                            <span class="pulse-dot" aria-hidden="true"
+                                  style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;"></span>
+                        @endunless
+                        {{ $servis->status }}
+                    </span>
                 </div>
 
                 <div class="rincian">

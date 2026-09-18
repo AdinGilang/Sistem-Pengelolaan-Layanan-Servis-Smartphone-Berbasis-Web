@@ -65,6 +65,63 @@
 }
 
 /* ==========================================================================
+   Animasi halaman publik
+   --------------------------------------------------------------------------
+   Berbeda dari gumpalan latar ber-blur yang dihapus sebelumnya (lihat
+   AUDIT.md bagian 2), animasi di sini mengikuti tiga batasan ketat:
+
+     1. Hanya opacity dan transform — dua properti yang dikerjakan
+        compositor, tidak memicu reflow atau repaint layout.
+     2. Berjalan SEKALI saat elemen muncul, bukan infinite. Begitu selesai,
+        animasi berhenti dan tidak membebani apa pun lagi.
+     3. Pengecualian sengaja: .pulse-dot, satu elemen mungil 6-7px yang
+        hanya beranimasi opacity — biayanya nyaris nol dibanding blob 600px
+        ber-blur 80px yang dihapus.
+
+   Seluruhnya otomatis dimatikan oleh aturan prefers-reduced-motion di atas.
+   ========================================================================== */
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatInRight {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .35; }
+}
+
+.anim-fade-up  { animation: fadeUp .6s cubic-bezier(.16, 1, .3, 1) both; }
+.anim-float-in { animation: floatInRight .6s cubic-bezier(.16, 1, .3, 1) both; }
+
+/*
+ * Elemen yang "diungkap" saat halaman digulir.
+ *
+ * Progresif dengan sengaja: tanpa .reveal-ready (yang hanya disisipkan
+ * public.js setelah IntersectionObserver siap), elemen tetap tampil penuh
+ * sejak awal. Bila skrip gagal dimuat atau browser tidak mendukungnya,
+ * pengunjung tetap melihat seluruh konten — animasi ini murni hiasan,
+ * bukan syarat supaya sesuatu terlihat.
+ */
+.reveal {
+    transition: opacity .6s cubic-bezier(.16, 1, .3, 1), transform .6s cubic-bezier(.16, 1, .3, 1);
+}
+
+.reveal.reveal-ready  { opacity: 0; transform: translateY(16px); }
+.reveal.reveal-visible { opacity: 1; transform: translateY(0); }
+
+/* Indikator "aktif/langsung" — dipakai pada titik status kecil, bukan
+   elemen layar penuh. */
+.pulse-dot {
+    animation: pulseDot 2s ease-in-out infinite;
+}
+
+/* ==========================================================================
    Kerangka halaman publik
    ========================================================================== */
 
@@ -199,7 +256,8 @@ textarea:focus-visible {
     line-height: 1.2;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease,
+                box-shadow .18s ease, transform .18s ease;
 }
 
 .btn svg {
@@ -207,6 +265,11 @@ textarea:focus-visible {
     height: 17px;
     flex-shrink: 0;
 }
+
+/* Sedikit terangkat saat disorot, kembali datar saat ditekan — hanya
+   transform, jadi tidak memicu perhitungan ulang tata letak. */
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
 
 .btn--solid {
     background: var(--navy);
@@ -216,6 +279,7 @@ textarea:focus-visible {
 
 .btn--solid:hover {
     background: var(--blue);
+    box-shadow: var(--shadow-md);
 }
 
 .btn--ghost {

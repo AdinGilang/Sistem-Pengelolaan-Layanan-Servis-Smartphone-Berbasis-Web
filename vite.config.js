@@ -10,6 +10,9 @@ export default defineConfig({
                 // Entry terpisah: Chart.js hanya diunduh di halaman statistik,
                 // bukan ikut terbawa ke setiap halaman aplikasi.
                 'resources/js/statistik.js',
+                // Entry terpisah: skrip animasi ringan tanpa Alpine, hanya
+                // dimuat di halaman publik (beranda, cek status).
+                'resources/js/public.js',
             ],
             refresh: true,
         }),

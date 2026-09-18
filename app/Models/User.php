@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,8 +11,19 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_OWNER = 'owner';
+
+    /** @var list<string> */
+    public const ROLES = [self::ROLE_ADMIN, self::ROLE_OWNER];
+
     /**
-     * The attributes that are mass assignable.
+     * "role" sengaja TIDAK mass assignable.
+     *
+     * Kalau ikut di sini, satu request yang menyelipkan field role bisa
+     * menaikkan hak akses dirinya sendiri lewat register atau update profil.
+     * Perubahan role hanya boleh lewat pemberian nilai eksplisit di kode
+     * yang sudah diotorisasi (seeder atau perintah artisan).
      *
      * @var list<string>
      */
@@ -21,12 +31,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role'
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
      * @var list<string>
      */
     protected $hidden = [
@@ -35,15 +42,31 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function isOwner(): bool
+    {
+        return $this->role === self::ROLE_OWNER;
+    }
+
+    /**
+     * @param  list<string>  $roles
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        return in_array($this->role, $roles, true);
     }
 }

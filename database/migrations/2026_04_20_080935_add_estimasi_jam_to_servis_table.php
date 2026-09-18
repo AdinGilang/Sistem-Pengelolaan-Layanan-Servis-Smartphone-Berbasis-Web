@@ -4,22 +4,30 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Kolom estimasi_jam sebetulnya sudah dibuat migration 2026_04_16.
+ *
+ * Migration ini menambahkannya sekali lagi, sehingga `php artisan migrate`
+ * pada database kosong berhenti dengan galat "duplicate column". Berkasnya
+ * tidak dihapus supaya riwayat migration pada database yang sudah berjalan
+ * tetap utuh; isinya cukup dibuat idempoten.
+ */
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
-{
-    Schema::table('servis', function (Blueprint $table) {
-        $table->integer('estimasi_jam')->nullable()->after('estimasi_hari');
-    });
-}
+    {
+        if (Schema::hasColumn('servis', 'estimasi_jam')) {
+            return;
+        }
 
-public function down(): void
-{
-    Schema::table('servis', function (Blueprint $table) {
-        $table->dropColumn('estimasi_jam');
-    });
-}
+        Schema::table('servis', function (Blueprint $table) {
+            $table->integer('estimasi_jam')->nullable()->after('estimasi_hari');
+        });
+    }
+
+    public function down(): void
+    {
+        // Kepemilikan kolom ini ada pada migration 2026_04_16, jadi
+        // rollback-nya diserahkan ke sana agar tidak terhapus dua kali.
+    }
 };

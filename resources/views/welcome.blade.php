@@ -1,574 +1,614 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'Phone Repair') }}</title>
+@php
+    $faq = [
+        [
+            'tanya'  => 'Bagaimana cara melacak status servis saya?',
+            'jawab'  => 'Buka halaman Cek Status Servis, lalu masukkan kode servis yang tertera pada nota atau pesan WhatsApp dari staf kami. Status terbaru langsung tampil tanpa perlu membuat akun.',
+        ],
+        [
+            'tanya'  => 'Di mana saya menemukan kode servis?',
+            'jawab'  => 'Kode servis dicetak pada nota penerimaan perangkat, berformat SRV diikuti tahun dan delapan karakter unik. Kode yang sama juga dikirim lewat WhatsApp saat perangkat Anda diterima.',
+        ],
+        [
+            'tanya'  => 'Apakah data pribadi saya aman?',
+            'jawab'  => 'Halaman pelacakan publik hanya menampilkan status perbaikan dan biaya. Alamat, nomor WhatsApp, pola kunci, dan PIN perangkat tidak pernah ditampilkan di sana. PIN disimpan sebagai hash satu arah dan pola kunci disimpan terenkripsi.',
+        ],
+        [
+            'tanya'  => 'Berapa lama perbaikan biasanya selesai?',
+            'jawab'  => 'Estimasi waktu diberikan saat perangkat diterima dan tercatat pada nota servis. Bila teknisi menemukan kerusakan lanjutan, kami menghubungi Anda lebih dulu sebelum melanjutkan pengerjaan.',
+        ],
+    ];
 
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    $schema = [
+        '@context' => 'https://schema.org',
+        '@graph'   => [
+            [
+                '@type'       => 'LocalBusiness',
+                'name'        => config('seo.site_name'),
+                'description' => config('seo.description'),
+                'url'         => url('/'),
+                'image'       => asset(config('seo.image')),
+            ],
+            [
+                '@type'      => 'WebSite',
+                'name'       => config('seo.site_name'),
+                'url'        => url('/'),
+                'potentialAction' => [
+                    '@type'       => 'SearchAction',
+                    'target'      => route('servis.cek') . '?kode={search_term_string}',
+                    'query-input' => 'required name=search_term_string',
+                ],
+            ],
+            [
+                '@type'      => 'FAQPage',
+                'mainEntity' => array_map(fn (array $item): array => [
+                    '@type'          => 'Question',
+                    'name'           => $item['tanya'],
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' => $item['jawab']],
+                ], $faq),
+            ],
+        ],
+    ];
+@endphp
 
-        @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-            @vite(['resources/css/app.css', 'resources/js/app.js'])
-        @endif
+<x-layouts.public
+    title="Lacak Servis Smartphone Anda"
+    description="Phone Repair mencatat setiap perangkat yang masuk, memantau progres perbaikan, dan menerbitkan invoice digital. Lacak status servis Anda kapan saja cukup dengan kode servis."
+    :schema="$schema"
+>
+    @push('styles')
+    <style>
+        /*
+         * Halaman depan sengaja tidak lagi memakai gumpalan warna raksasa
+         * ber-blur yang beranimasi tanpa henti. Tiga lingkaran 600px dengan
+         * filter blur 80px memaksa GPU menggambar ulang seluruh layar di
+         * setiap frame — di laptop kentang dan ponsel, kipas berputar dan
+         * baterai terkuras hanya untuk latar belakang yang tidak dibaca
+         * siapa pun. Kedalaman sekarang dibangun dari warna, garis, dan
+         * bayangan tipis saja.
+         */
 
-        <style>
-            :root {
-                --navy:   #1a2035;
-                --navy-light: #243049;
-                --blue:   #4361ee;
-                --blue-light: #647cf5;
-                --orange: #f7a41d;
-                --purple: #9c4fe3;
-                --green:  #2ed8a3;
-                --bg:     #f0f2f8;
-                --white:  #ffffff;
-                --text:   #1a2035;
-                --muted:  #7a8099;
-            }
+        .hero {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 64px 24px 48px;
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+            gap: 56px;
+            align-items: center;
+        }
 
-            * { box-sizing: border-box; margin: 0; padding: 0; }
+        .hero__eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 14px;
+            border-radius: 100px;
+            background: var(--blue-wash);
+            color: var(--blue-dark);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            margin-bottom: 20px;
+        }
 
-            body {
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                background: var(--bg);
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                overflow-x: hidden;
-            }
+        .hero__dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+        }
 
-            /* ── Animated background blobs ── */
-            .bg-blobs {
-                position: fixed;
-                inset: 0;
-                pointer-events: none;
-                z-index: 0;
-                overflow: hidden;
-            }
-            .blob {
-                position: absolute;
-                border-radius: 50%;
-                filter: blur(80px);
-                opacity: .18;
-                animation: drift 14s ease-in-out infinite alternate;
-            }
-            .blob-1 { width: 600px; height: 600px; background: var(--blue);   top: -200px; left: -150px; animation-delay: 0s; }
-            .blob-2 { width: 500px; height: 500px; background: var(--purple); bottom: -150px; right: -100px; animation-delay: -5s; }
-            .blob-3 { width: 350px; height: 350px; background: var(--green);  top: 40%; left: 40%; animation-delay: -9s; }
-            @keyframes drift {
-                from { transform: translate(0,0) scale(1); }
-                to   { transform: translate(40px, 30px) scale(1.08); }
-            }
+        .hero__title {
+            font-family: var(--font-display);
+            font-size: clamp(32px, 4.6vw, 52px);
+            font-weight: 700;
+            line-height: 1.12;
+            letter-spacing: -.02em;
+            margin: 0 0 18px;
+            color: var(--navy);
+        }
 
-            /* ── Nav ── */
-            .topbar {
-                position: relative; z-index: 10;
-                display: flex; align-items: center; justify-content: space-between;
-                padding: 20px 40px;
-            }
-            .logo {
-                display: flex; align-items: center; gap: 10px;
-                text-decoration: none;
-            }
-            .logo-icon {
-                width: 40px; height: 40px; border-radius: 10px;
-                background: var(--navy);
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 4px 14px rgba(67,97,238,.4);
-            }
-            .logo-icon svg { width: 20px; height: 20px; fill: white; }
-            .logo-text {
-                font-family: 'Space Grotesk', sans-serif;
-                font-weight: 700; font-size: 17px; letter-spacing: .5px;
-                color: var(--navy);
-            }
-            .nav-actions { display: flex; align-items: center; gap: 10px; }
-            .btn-ghost {
-                padding: 8px 20px; border-radius: 8px; border: 1.5px solid rgba(26,32,53,.15);
-                background: transparent; color: var(--navy);
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 14px; font-weight: 500; cursor: pointer;
-                text-decoration: none; transition: all .2s;
-            }
-            .btn-ghost:hover { border-color: var(--blue); color: var(--blue); background: rgba(67,97,238,.06); }
-            .btn-primary {
-                padding: 8px 22px; border-radius: 8px; border: none;
-                background: var(--navy); color: white;
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 14px; font-weight: 600; cursor: pointer;
-                text-decoration: none; transition: all .2s;
-                box-shadow: 0 4px 14px rgba(26,32,53,.25);
-            }
-            .btn-primary:hover { background: var(--blue); box-shadow: 0 6px 18px rgba(67,97,238,.35); transform: translateY(-1px); }
+        .hero__title em {
+            font-style: normal;
+            color: var(--blue);
+        }
 
-            /* ── Hero ── */
+        .hero__lead {
+            font-size: 16px;
+            line-height: 1.7;
+            color: var(--muted);
+            margin: 0 0 28px;
+            max-width: 52ch;
+        }
+
+        .hero__cta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        /* ── Angka nyata dari basis data ── */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0;
+            margin-top: 40px;
+            border-top: 1px solid var(--line);
+            padding-top: 24px;
+        }
+
+        .stats__item + .stats__item {
+            border-left: 1px solid var(--line);
+            padding-left: 20px;
+        }
+
+        .stats__value {
+            font-family: var(--font-display);
+            font-size: 30px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--navy);
+        }
+
+        .stats__label {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* ── Kartu pelacakan di sisi kanan ── */
+        .tracker {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        .tracker__head {
+            background: var(--navy);
+            color: #fff;
+            padding: 18px 22px;
+        }
+
+        .tracker__title {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .tracker__sub {
+            font-size: 12px;
+            color: rgba(255, 255, 255, .62);
+            margin: 4px 0 0;
+        }
+
+        .tracker__body {
+            padding: 22px;
+        }
+
+        .tracker__field {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 8px;
+        }
+
+        .tracker__input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: var(--r-sm);
+            font-family: inherit;
+            font-size: 15px;
+            color: var(--text);
+            background: var(--bg);
+        }
+
+        .tracker__input:focus {
+            border-color: var(--blue);
+            background: var(--surface);
+        }
+
+        .tracker__hint {
+            font-size: 12px;
+            color: var(--muted);
+            margin: 10px 0 0;
+        }
+
+        .tracker__steps {
+            margin-top: 22px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .step {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .step__num {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--blue-wash);
+            color: var(--blue-dark);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .step__title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--navy);
+            margin: 2px 0 2px;
+        }
+
+        .step__text {
+            font-size: 13px;
+            color: var(--muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* ── Fitur ── */
+        .section {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 56px 24px;
+        }
+
+        .section__title {
+            font-family: var(--font-display);
+            font-size: clamp(24px, 3vw, 32px);
+            font-weight: 700;
+            color: var(--navy);
+            margin: 0 0 8px;
+            letter-spacing: -.01em;
+        }
+
+        .section__lead {
+            color: var(--muted);
+            font-size: 15px;
+            margin: 0 0 32px;
+            max-width: 60ch;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+        }
+
+        .feature {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+        .feature:hover {
+            border-color: rgba(59, 91, 219, .35);
+            box-shadow: var(--shadow-md);
+        }
+
+        .feature__icon {
+            width: 42px;
+            height: 42px;
+            border-radius: var(--r-md);
+            background: var(--blue-wash);
+            color: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .feature__icon svg {
+            width: 21px;
+            height: 21px;
+        }
+
+        .feature__title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--navy);
+            margin: 0 0 6px;
+        }
+
+        .feature__text {
+            font-size: 13.5px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        /* ── FAQ ── */
+        .faq {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .faq__item {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-md);
+            padding: 0;
+        }
+
+        .faq__item summary {
+            cursor: pointer;
+            padding: 16px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--navy);
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .faq__item summary::-webkit-details-marker { display: none; }
+
+        .faq__item summary::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-right: 2px solid var(--muted);
+            border-bottom: 2px solid var(--muted);
+            transform: rotate(45deg);
+            flex-shrink: 0;
+            transition: transform .18s ease;
+        }
+
+        .faq__item[open] summary::after {
+            transform: rotate(-135deg);
+        }
+
+        .faq__answer {
+            padding: 0 20px 18px;
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        @media (max-width: 900px) {
             .hero {
-                position: relative; z-index: 5;
-                flex: 1;
-                display: flex; align-items: center; justify-content: center;
-                padding: 40px 40px 60px;
-                gap: 60px;
-                flex-wrap: wrap;
+                grid-template-columns: 1fr;
+                gap: 40px;
+                padding: 40px 20px 32px;
             }
 
-            .hero-left { max-width: 540px; flex: 1 1 320px; }
-
-            .badge {
-                display: inline-flex; align-items: center; gap: 6px;
-                background: rgba(26,32,53,.07); border: 1px solid rgba(26,32,53,.12);
-                padding: 5px 14px; border-radius: 100px;
-                font-size: 12px; font-weight: 600; color: var(--navy); letter-spacing: .4px;
-                margin-bottom: 24px;
-                animation: fadeUp .6s ease both;
-            }
-            .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
-
-            .hero-title {
-                font-family: 'Space Grotesk', sans-serif;
-                font-size: clamp(36px, 5vw, 58px);
-                font-weight: 700; line-height: 1.1;
-                color: var(--navy);
-                margin-bottom: 20px;
-                animation: fadeUp .6s .1s ease both;
-            }
-            .hero-title span {
-                background: linear-gradient(135deg, var(--blue), var(--purple));
-                -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-                background-clip: text;
+            .stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 20px 0;
             }
 
-            .hero-desc {
-                font-size: 16px; line-height: 1.7; color: var(--muted);
-                margin-bottom: 36px;
-                animation: fadeUp .6s .2s ease both;
+            .stats__item:nth-child(odd) {
+                border-left: none;
+                padding-left: 0;
             }
 
-            .hero-cta {
-                display: flex; flex-wrap: wrap; gap: 12px;
-                animation: fadeUp .6s .3s ease both;
-            }
-            .cta-main {
-                display: inline-flex; align-items: center; gap: 8px;
-                padding: 14px 30px; border-radius: 12px; border: none;
-                background: var(--navy); color: white;
-                font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 15px; font-weight: 600; cursor: pointer;
-                text-decoration: none; transition: all .25s;
-                box-shadow: 0 6px 20px rgba(26,32,53,.3);
-            }
-            .cta-main:hover { background: var(--blue); transform: translateY(-2px); box-shadow: 0 10px 28px rgba(67,97,238,.4); }
-            .cta-main svg { width: 18px; height: 18px; }
-            .cta-secondary {
-                display: inline-flex; align-items: center; gap: 8px;
-                padding: 14px 28px; border-radius: 12px;
-                border: 1.5px solid rgba(26,32,53,.18); background: white;
-                color: var(--navy); font-family: 'Plus Jakarta Sans', sans-serif;
-                font-size: 15px; font-weight: 600; cursor: pointer;
-                text-decoration: none; transition: all .25s;
-                box-shadow: 0 2px 8px rgba(0,0,0,.06);
-            }
-            .cta-secondary:hover { border-color: var(--blue); color: var(--blue); transform: translateY(-2px); }
+            .section { padding: 40px 20px; }
+        }
+    </style>
+    @endpush
 
-            /* ── Stats strip ── */
-            .stats-strip {
-                display: flex; gap: 32px; margin-top: 48px;
-                animation: fadeUp .6s .4s ease both;
-                flex-wrap: wrap;
-            }
-            .stat { }
-            .stat-num {
-                font-family: 'Space Grotesk', sans-serif;
-                font-size: 28px; font-weight: 700; color: var(--navy); line-height: 1;
-            }
-            .stat-num span { color: var(--blue); }
-            .stat-label { font-size: 12px; color: var(--muted); margin-top: 3px; font-weight: 500; }
-            .stat-divider { width: 1px; background: rgba(26,32,53,.12); align-self: stretch; }
+    {{-- ══════════════════ HERO ══════════════════ --}}
+    <section class="hero">
+        <div>
+            <p class="hero__eyebrow">
+                <span class="hero__dot" aria-hidden="true"></span>
+                Layanan servis smartphone
+            </p>
 
-            /* ── Dashboard card mockup ── */
-            .hero-right {
-                flex: 1 1 380px; max-width: 480px;
-                animation: floatIn .8s .2s ease both;
-            }
-            .dashboard-card {
-                background: white;
-                border-radius: 20px;
-                box-shadow: 0 24px 60px rgba(26,32,53,.18), 0 4px 16px rgba(0,0,0,.06);
-                overflow: hidden;
-                border: 1px solid rgba(255,255,255,.8);
-            }
-            .card-topbar {
-                background: var(--navy);
-                padding: 16px 20px;
-                display: flex; align-items: center; justify-content: space-between;
-            }
-            .card-topbar-title {
-                font-family: 'Space Grotesk', sans-serif;
-                font-size: 13px; font-weight: 600; color: rgba(255,255,255,.9);
-                letter-spacing: .3px;
-            }
-            .card-dots { display: flex; gap: 6px; }
-            .card-dots span { width: 9px; height: 9px; border-radius: 50%; }
-            .dot-r { background: #ff5f57; }
-            .dot-y { background: #febc2e; }
-            .dot-g { background: #28c840; }
+            <h1 class="hero__title">
+                Lacak servis HP Anda,<br>
+                <em>tanpa perlu bertanya-tanya</em>
+            </h1>
 
-            .card-body { padding: 20px; }
-            .mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
-            .mini-stat {
-                background: var(--bg);
-                border-radius: 12px;
-                padding: 12px 10px;
-                text-align: center;
-                border-top: 3px solid transparent;
-                transition: transform .2s;
-            }
-            .mini-stat:hover { transform: translateY(-2px); }
-            .mini-stat.blue  { border-color: var(--blue); }
-            .mini-stat.orange{ border-color: var(--orange); }
-            .mini-stat.purple{ border-color: var(--purple); }
-            .mini-stat.green { border-color: var(--green); }
-            .mini-stat-val {
-                font-family: 'Space Grotesk', sans-serif;
-                font-size: 22px; font-weight: 700; color: var(--navy);
-            }
-            .mini-stat-lbl { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: .4px; text-transform: uppercase; margin-top: 2px; }
+            <p class="hero__lead">
+                Setiap perangkat yang masuk ke Phone Repair mendapat kode servis sendiri.
+                Cukup masukkan kodenya untuk melihat progres perbaikan, teknisi yang menangani,
+                dan biaya akhirnya — kapan saja, dari perangkat apa saja.
+            </p>
 
-            .card-section-title {
-                font-size: 11px; font-weight: 700; color: var(--muted);
-                text-transform: uppercase; letter-spacing: .5px;
-                margin-bottom: 10px;
-            }
-            .repair-list { display: flex; flex-direction: column; gap: 8px; }
-            .repair-row {
-                display: flex; align-items: center; gap: 10px;
-                padding: 9px 12px; border-radius: 10px; background: var(--bg);
-            }
-            .repair-icon {
-                width: 30px; height: 30px; border-radius: 8px;
-                display: flex; align-items: center; justify-content: center;
-                flex-shrink: 0;
-            }
-            .repair-icon svg { width: 15px; height: 15px; }
-            .repair-icon.blue   { background: rgba(67,97,238,.12);  }
-            .repair-icon.orange { background: rgba(247,164,29,.12); }
-            .repair-icon.purple { background: rgba(156,79,227,.12); }
-            .repair-info { flex: 1; }
-            .repair-name { font-size: 12px; font-weight: 600; color: var(--navy); }
-            .repair-type { font-size: 10px; color: var(--muted); }
-            .repair-badge {
-                font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 100px;
-            }
-            .badge-proses  { background: rgba(67,97,238,.1);  color: var(--blue); }
-            .badge-tunggu  { background: rgba(247,164,29,.12); color: #c48100; }
-            .badge-selesai { background: rgba(46,216,163,.12); color: #18a07a; }
+            <div class="hero__cta">
+                <a href="{{ route('servis.cek') }}" class="btn btn--solid btn--lg">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                    Cek Status Servis
+                </a>
 
-            .progress-section { margin-top: 16px; }
-            .progress-row { margin-bottom: 10px; }
-            .progress-header { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
-            .progress-track { background: var(--bg); border-radius: 100px; height: 6px; overflow: hidden; }
-            .progress-fill { height: 100%; border-radius: 100px; transition: width .8s cubic-bezier(.4,0,.2,1); }
-            .fill-blue   { background: linear-gradient(90deg, var(--blue), var(--blue-light)); }
-            .fill-orange { background: linear-gradient(90deg, #e69000, var(--orange)); }
-            .fill-purple { background: linear-gradient(90deg, #7c35c5, var(--purple)); }
-            .fill-green  { background: linear-gradient(90deg, #1ab88a, var(--green)); }
+                @auth
+                    <a href="{{ route('dashboard') }}" class="btn btn--ghost btn--lg">Buka Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="btn btn--ghost btn--lg">Masuk sebagai Staf</a>
+                @endauth
+            </div>
 
-            /* ── Features ── */
-            .features {
-                position: relative; z-index: 5;
-                padding: 0 40px 80px;
-                display: grid;
-                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-                gap: 16px;
-                max-width: 1100px; margin: 0 auto; width: 100%;
-            }
-            .feature-card {
-                background: white; border-radius: 16px;
-                padding: 24px; border: 1px solid rgba(26,32,53,.07);
-                box-shadow: 0 2px 12px rgba(0,0,0,.05);
-                transition: all .25s;
-                animation: fadeUp .6s ease both;
-            }
-            .feature-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(0,0,0,.1); }
-            .feature-icon {
-                width: 44px; height: 44px; border-radius: 12px;
-                display: flex; align-items: center; justify-content: center;
-                margin-bottom: 14px;
-            }
-            .feature-icon svg { width: 22px; height: 22px; }
-            .fi-blue   { background: rgba(67,97,238,.1);  }
-            .fi-orange { background: rgba(247,164,29,.12); }
-            .fi-purple { background: rgba(156,79,227,.1);  }
-            .fi-green  { background: rgba(46,216,163,.12); }
-            .feature-title { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
-            .feature-desc  { font-size: 13px; color: var(--muted); line-height: 1.6; }
-
-            /* ── Footer ── */
-            .footer {
-                position: relative; z-index: 5;
-                padding: 20px 40px;
-                display: flex; align-items: center; justify-content: center;
-                border-top: 1px solid rgba(26,32,53,.08);
-                font-size: 12px; color: var(--muted);
-            }
-
-            @keyframes fadeUp {
-                from { opacity: 0; transform: translateY(20px); }
-                to   { opacity: 1; transform: translateY(0); }
-            }
-            @keyframes floatIn {
-                from { opacity: 0; transform: translateX(30px); }
-                to   { opacity: 1; transform: translateX(0); }
-            }
-            @keyframes float {
-                0%, 100% { transform: translateY(0); }
-                50%       { transform: translateY(-8px); }
-            }
-            .hero-right { animation: floatIn .8s .2s ease both; }
-            .dashboard-card { animation: float 6s ease-in-out infinite; animation-delay: 1s; }
-
-            @media (max-width: 768px) {
-                .topbar { padding: 16px 20px; }
-                .hero { padding: 30px 20px 40px; flex-direction: column; gap: 40px; }
-                .hero-left { max-width: 100%; }
-                .features { padding: 0 20px 60px; }
-                .mini-stats { grid-template-columns: repeat(2, 1fr); }
-            }
-        </style>
-    </head>
-    <body>
-        <!-- Background blobs -->
-        <div class="bg-blobs">
-            <div class="blob blob-1"></div>
-            <div class="blob blob-2"></div>
-            <div class="blob blob-3"></div>
+            {{-- Angka di bawah ini dibaca langsung dari basis data, bukan angka
+                 contoh yang ditulis di template seperti sebelumnya. --}}
+            <div class="stats">
+                <div class="stats__item">
+                    <div class="stats__value">{{ number_format($ringkasan['total'], 0, ',', '.') }}</div>
+                    <p class="stats__label">Total unit tercatat</p>
+                </div>
+                <div class="stats__item">
+                    <div class="stats__value">{{ number_format($ringkasan['menunggu'], 0, ',', '.') }}</div>
+                    <p class="stats__label">Menunggu antrean</p>
+                </div>
+                <div class="stats__item">
+                    <div class="stats__value">{{ number_format($ringkasan['proses'], 0, ',', '.') }}</div>
+                    <p class="stats__label">Sedang dikerjakan</p>
+                </div>
+                <div class="stats__item">
+                    <div class="stats__value">{{ number_format($ringkasan['selesai'], 0, ',', '.') }}</div>
+                    <p class="stats__label">Selesai diperbaiki</p>
+                </div>
+            </div>
         </div>
 
-        <!-- Topbar -->
-        <header class="topbar">
-            <a href="/" class="logo">
-                            <img src="{{ asset('images/logo-phone-repair.png') }}"
-                    alt="Phone Repair"
-                    class="w-10 h-10 object-contain"
-                >
-                <span class="font-bold text-lg tracking-wide text-slate-900">
-                    PHONE REPAIR
-                </span>
-            </a>
+        {{-- Kartu ini bukan gambar hiasan: formulirnya benar-benar mengirim
+             ke halaman pelacakan. --}}
+        <div class="tracker">
+            <div class="tracker__head">
+                <h2 class="tracker__title">Lacak perbaikan Anda</h2>
+                <p class="tracker__sub">Masukkan kode dari nota servis</p>
+            </div>
 
-            @if (Route::has('login'))
-                <nav class="nav-actions">
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="btn-primary">
-                            Dashboard
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="btn-ghost">Masuk</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn-primary">Daftar Sekarang</a>
-                        @endif
-                    @endauth
-                </nav>
-            @endif
-        </header>
+            <div class="tracker__body">
+                <form method="GET" action="{{ route('servis.cek') }}">
+                    <label class="tracker__field" for="kode-hero">Kode servis</label>
+                    <input
+                        id="kode-hero"
+                        class="tracker__input"
+                        type="text"
+                        name="kode"
+                        inputmode="text"
+                        autocomplete="off"
+                        maxlength="40"
+                        placeholder="SRV-{{ date('Y') }}-XXXXXXXX"
+                        required
+                    >
+                    <p class="tracker__hint">
+                        Kode tercetak pada nota servis dan dikirim lewat WhatsApp saat perangkat diterima.
+                    </p>
+                    <button type="submit" class="btn btn--solid" style="width:100%;margin-top:14px;">
+                        Lacak Sekarang
+                    </button>
+                </form>
 
-        <!-- Hero -->
-        <section class="hero">
-            <div class="hero-left">
-                <div class="badge">
-                    <span class="badge-dot"></span>
-                    Sistem Manajemen Servis Aktif
+                <div class="tracker__steps">
+                    <div class="step">
+                        <span class="step__num" aria-hidden="true">1</span>
+                        <div>
+                            <p class="step__title">Perangkat diterima</p>
+                            <p class="step__text">Kelengkapan dicatat, Anda menerima nota dengan kode servis.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step__num" aria-hidden="true">2</span>
+                        <div>
+                            <p class="step__title">Dikerjakan teknisi</p>
+                            <p class="step__text">Perubahan biaya di luar estimasi dikonfirmasi lebih dulu ke Anda.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <span class="step__num" aria-hidden="true">3</span>
+                        <div>
+                            <p class="step__title">Siap diambil</p>
+                            <p class="step__text">Status berubah menjadi Selesai dan invoice diterbitkan.</p>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </section>
 
-                <h1 class="hero-title">
-                    Kelola Servis HP<br>
-                    Lebih <span>Efisien &amp; Terorganisir</span>
-                </h1>
+    {{-- ══════════════════ FITUR ══════════════════ --}}
+    <section class="section" aria-labelledby="judul-fitur">
+        <h2 class="section__title" id="judul-fitur">Yang dikerjakan sistem ini</h2>
+        <p class="section__lead">
+            Seluruh proses servis yang dulu dicatat di buku tulis kini terekam rapi,
+            dari perangkat masuk sampai invoice tercetak.
+        </p>
 
-                <p class="hero-desc">
-                    Platform manajemen servis handphone yang lengkap. Pantau status perbaikan,
-                    kelola data pelanggan, dan tingkatkan produktivitas servis Anda — semua dalam satu dasbor.
+        <div class="features">
+            <article class="feature">
+                <div class="feature__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/>
+                    </svg>
+                </div>
+                <h3 class="feature__title">Pemantauan status</h3>
+                <p class="feature__text">
+                    Setiap unit punya status yang jelas: menunggu, sedang dikerjakan, atau selesai.
+                    Pelanggan bisa memeriksanya sendiri tanpa menelepon.
                 </p>
+            </article>
 
-                <div class="hero-cta">
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="cta-main">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="7" height="7" rx="1"/>
-                                <rect x="14" y="3" width="7" height="7" rx="1"/>
-                                <rect x="3" y="14" width="7" height="7" rx="1"/>
-                                <rect x="14" y="14" width="7" height="7" rx="1"/>
-                            </svg>
-                            Buka Dashboard
-                        </a>
-                    @else
-                        <a href="{{ route('login') }}" class="cta-main">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/>
-                            </svg>
-                            Masuk ke Sistem
-                        </a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="cta-secondary">
-                                Daftar Akun 
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
-                                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                                </svg>
-                            </a>
-                        @endif
-                    @endauth
+            <article class="feature">
+                <div class="feature__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                    </svg>
                 </div>
+                <h3 class="feature__title">Riwayat pelanggan</h3>
+                <p class="feature__text">
+                    Data pelanggan dan riwayat perbaikannya tersimpan terstruktur,
+                    sehingga servis ulang tidak perlu mengulang pencatatan dari nol.
+                </p>
+            </article>
 
-                <div class="stats-strip">
-                    <div class="stat">
-                        <div class="stat-num">16<span>+</span></div>
-                        <div class="stat-label">Total Servis</div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat">
-                        <div class="stat-num">7</div>
-                        <div class="stat-label">Sedang Diproses</div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat">
-                        <div class="stat-num">5</div>
-                        <div class="stat-label">Selesai Hari Ini</div>
-                    </div>
-                    <div class="stat-divider"></div>
-                    <div class="stat">
-                        <div class="stat-num">4</div>
-                        <div class="stat-label">Menunggu</div>
-                    </div>
+            <article class="feature">
+                <div class="feature__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>
+                    </svg>
                 </div>
-            </div>
+                <h3 class="feature__title">Invoice &amp; laporan</h3>
+                <p class="feature__text">
+                    Invoice dicetak langsung dalam format PDF siap kertas termal,
+                    dan rekap bulanan dapat diunduh sebagai PDF maupun Excel.
+                </p>
+            </article>
 
-            <!-- Dashboard mockup -->
-            <div class="hero-right">
-                <div class="dashboard-card">
-                    <div class="card-topbar">
-                        <div class="card-dots">
-                            <span class="dot-r"></span>
-                            <span class="dot-y"></span>
-                            <span class="dot-g"></span>
-                        </div>
-                        <span class="card-topbar-title">Dashboard — Phone Repair</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/>
-                        </svg>
-                    </div>
-
-                    <div class="card-body">
-                        <!-- Mini stat cards -->
-                        <div class="mini-stats">
-                            <div class="mini-stat blue">
-                                <div class="mini-stat-val">16</div>
-                                <div class="mini-stat-lbl">Total</div>
-                            </div>
-                            <div class="mini-stat orange">
-                                <div class="mini-stat-val">4</div>
-                                <div class="mini-stat-lbl">Menunggu</div>
-                            </div>
-                            <div class="mini-stat purple">
-                                <div class="mini-stat-val">7</div>
-                                <div class="mini-stat-lbl">Proses</div>
-                            </div>
-                            <div class="mini-stat green">
-                                <div class="mini-stat-val">5</div>
-                                <div class="mini-stat-lbl">Selesai</div>
-                            </div>
-                        </div>
-
-                        <!-- Repair list -->
-                        <div class="card-section-title">Data Servis Terbaru</div>
-                        <div class="repair-list">
-                            <div class="repair-row">
-                                <div class="repair-icon blue">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="#4361ee" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-                                </div>
-                                <div class="repair-info">
-                                    <div class="repair-name">Prabowo Sayang Buna Teddy</div>
-                                    <div class="repair-type">LCD + backdoor</div>
-                                </div>
-                                <span class="repair-badge badge-proses">Proses</span>
-                            </div>
-                            <div class="repair-row">
-                                <div class="repair-icon orange">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="#f7a41d" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-                                </div>
-                                <div class="repair-info">
-                                    <div class="repair-name">bahlil</div>
-                                    <div class="repair-type">fingerprint</div>
-                                </div>
-                                <span class="repair-badge badge-tunggu">Menunggu</span>
-                            </div>
-                            <div class="repair-row">
-                                <div class="repair-icon purple">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="#9c4fe3" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-                                </div>
-                                <div class="repair-info">
-                                    <div class="repair-name">Jokowi</div>
-                                    <div class="repair-type">LCD</div>
-                                </div>
-                                <span class="repair-badge badge-proses">Proses</span>
-                            </div>
-                        </div>
-
-                        <!-- Progress bars -->
-                        <div class="progress-section">
-                            <div class="progress-row">
-                                <div class="progress-header"><span>Menunggu</span><span style="color:var(--orange);font-weight:600">25%</span></div>
-                                <div class="progress-track"><div class="progress-fill fill-orange" style="width:25%"></div></div>
-                            </div>
-                            <div class="progress-row">
-                                <div class="progress-header"><span>Sedang Diproses</span><span style="color:var(--purple);font-weight:600">44%</span></div>
-                                <div class="progress-track"><div class="progress-fill fill-purple" style="width:44%"></div></div>
-                            </div>
-                            <div class="progress-row">
-                                <div class="progress-header"><span>Selesai</span><span style="color:var(--green);font-weight:600">31%</span></div>
-                                <div class="progress-track"><div class="progress-fill fill-green" style="width:31%"></div></div>
-                            </div>
-                        </div>
-                    </div>
+            <article class="feature">
+                <div class="feature__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <path d="m9 12 2 2 4-4"/>
+                    </svg>
                 </div>
-            </div>
-        </section>
-
-        <!-- Feature cards -->
-        <div class="features" style="max-width:1100px;margin:0 auto;width:100%;">
-            <div class="feature-card" style="animation-delay:.1s">
-                <div class="feature-icon fi-blue">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#4361ee" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                </div>
-                <div class="feature-title">Tracking Real-time</div>
-                <div class="feature-desc">Pantau status setiap perangkat dari masuk hingga selesai diperbaiki secara langsung.</div>
-            </div>
-            <div class="feature-card" style="animation-delay:.2s">
-                <div class="feature-icon fi-orange">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#f7a41d" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
-                <div class="feature-title">Manajemen Pelanggan</div>
-                <div class="feature-desc">Simpan data pelanggan dan riwayat servis dengan mudah dan terstruktur.</div>
-            </div>
-            <div class="feature-card" style="animation-delay:.3s">
-                <div class="feature-icon fi-purple">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#9c4fe3" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-                </div>
-                <div class="feature-title">Laporan Statistik</div>
-                <div class="feature-desc">Visualisasi data servis harian, mingguan, dan bulanan dalam grafik yang mudah dibaca.</div>
-            </div>
-            <div class="feature-card" style="animation-delay:.4s">
-                <div class="feature-icon fi-green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#2ed8a3" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <div class="feature-title">Data Aman & Terjaga</div>
-                <div class="feature-desc">Semua data servis tersimpan dengan aman dan hanya dapat diakses oleh staf berwenang.</div>
-            </div>
+                <h3 class="feature__title">Akses berlapis</h3>
+                <p class="feature__text">
+                    Admin mengelola data servis, pemilik memantau laporan dan statistik.
+                    Kredensial perangkat pelanggan disimpan terenkripsi.
+                </p>
+            </article>
         </div>
+    </section>
 
-        <!-- Footer -->
-        <footer class="footer">
-            &copy; {{ date('Y') }} {{ config('app.name', 'Phone Repair') }} — Sistem Manajemen Servis Handphone
-        </footer>
-    </body>
-</html>
+    {{-- ══════════════════ FAQ ══════════════════ --}}
+    <section class="section" aria-labelledby="judul-faq">
+        <h2 class="section__title" id="judul-faq">Pertanyaan yang sering diajukan</h2>
+        <p class="section__lead">Hal-hal yang paling sering ditanyakan pelanggan sebelum menyervis perangkatnya.</p>
+
+        <div class="faq">
+            @foreach ($faq as $item)
+                <details class="faq__item" @if ($loop->first) open @endif>
+                    <summary>{{ $item['tanya'] }}</summary>
+                    <p class="faq__answer">{{ $item['jawab'] }}</p>
+                </details>
+            @endforeach
+        </div>
+    </section>
+</x-layouts.public>

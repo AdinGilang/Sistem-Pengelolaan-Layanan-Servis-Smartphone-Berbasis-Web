@@ -1,3 +1,7 @@
+@php
+    $userRole = auth()->user()?->role ?? 'admin';
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -5,45 +9,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'ServisApp') }}</title>
+    {{-- Seluruh halaman panel berisi data pelanggan, jadi tidak boleh
+         terindeks mesin pencari. Middleware SecurityHeaders juga mengirim
+         header X-Robots-Tag yang sama sebagai lapisan kedua. --}}
+    <title>{{ isset($header) ? $header . ' — ' : '' }}{{ config('seo.site_name', 'Phone Repair') }}</title>
+    <meta name="robots" content="noindex, nofollow, noarchive">
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { font-family: var(--font-sans); }
         [x-cloak] { display: none !important; }
+
+        .sidebar {
+            background: var(--navy);
+            min-height: 100vh;
+        }
 
         .sidebar-nav-item {
             display: flex;
             align-items: center;
             gap: 10px;
             padding: 10px 12px;
-            border-radius: 10px;
-            color: rgba(255,255,255,0.55);
+            border-radius: var(--r-md);
+            color: rgba(255, 255, 255, .6);
             font-size: 14px;
             font-weight: 500;
             text-decoration: none;
-            transition: all 0.18s ease;
+            transition: background-color .18s ease, color .18s ease;
             margin-bottom: 2px;
         }
-        .sidebar-nav-item:hover { background: #252c4a; color: #fff; }
+
+        .sidebar-nav-item:hover { background: var(--navy-soft); color: #fff; }
+
         .sidebar-nav-item.active {
-            background: #3b5bdb;
+            background: var(--blue);
             color: #fff;
-            box-shadow: 0 4px 12px rgba(59,91,219,0.4);
         }
+
         .sidebar-nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+
         .sidebar-nav-item .nav-badge {
             margin-left: auto;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255, 255, 255, .15);
             color: #fff;
             font-size: 11px;
             font-weight: 600;
             padding: 2px 7px;
             border-radius: 20px;
         }
-        .sidebar-nav-item.active .nav-badge { background: rgba(255,255,255,0.25); }
+
+        .sidebar-nav-item.active .nav-badge { background: rgba(255, 255, 255, .25); }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: #8a93b2;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            padding: 0 8px;
+            margin: 16px 0 6px;
+            display: block;
+        }
 
         .role-badge {
             display: inline-block;
@@ -52,114 +85,160 @@
             padding: 2px 8px;
             border-radius: 20px;
             text-transform: uppercase;
-            letter-spacing: .5px;
+            letter-spacing: .05em;
         }
-        .role-badge.admin { background: rgba(59,91,219,0.25); color: #7c9dff; }
-        .role-badge.owner { background: rgba(245,159,0,0.25);  color: #ffd43b; }
 
-        .nav-section-label {
-            font-size: 10px;
-            font-weight: 600;
-            color: #8a93b2;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            padding: 0 8px;
-            margin: 16px 0 6px;
-            display: block;
+        .role-badge.admin { background: rgba(59, 91, 219, .25); color: #a9bcff; }
+        .role-badge.owner { background: rgba(245, 159, 0, .25); color: #ffd98a; }
+
+        .avatar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: var(--blue);
+            color: #fff;
+            font-weight: 700;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        /* Tombol logout: efek sorot ditulis sebagai CSS, bukan atribut
+           onmouseover yang menulis ulang style lewat JavaScript inline. */
+        .logout-btn {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: var(--r-md);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 500;
+            color: #ff8787;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: background-color .18s ease;
+        }
+
+        .logout-btn:hover { background: rgba(250, 82, 82, .14); }
+        .logout-btn svg { width: 17px; height: 17px; }
+
+        .topbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--line);
         }
     </style>
+
+    @stack('styles')
 </head>
 
-<body class="antialiased" style="background:#f0f2f7; color:#1a1f36;">
+<body class="antialiased" style="background: var(--bg); color: var(--text);">
 
-@php $userRole = auth()->user()->role ?? 'admin'; @endphp
+<a class="skip-link" href="#konten">Lompat ke konten utama</a>
 
 <div x-data="{ open: false }" class="min-h-screen flex">
 
-    <!-- ═══════════════════════ SIDEBAR ═══════════════════════ -->
+    {{-- ═══════════════════════ SIDEBAR ═══════════════════════ --}}
     <aside
         :class="open ? 'translate-x-0' : '-translate-x-full'"
-        class="fixed inset-y-0 left-0 w-60 flex flex-col transform transition-transform duration-300 z-40
-               md:relative md:translate-x-0"
-        style="background:#1a1f36; min-height:100vh;">
+        class="sidebar fixed inset-y-0 left-0 w-60 flex flex-col transform transition-transform duration-300 z-40 md:relative md:translate-x-0">
 
-        <!-- Brand -->
-        <div class="flex items-center gap-3 px-5 py-6" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div class="flex items-center gap-3 px-5 py-6" style="border-bottom:1px solid rgba(255,255,255,.07);">
             <div class="flex items-center justify-center rounded-xl flex-shrink-0"
-                 style="width:36px;height:36px;background:#3b5bdb;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                 style="width:36px;height:36px;background:var(--blue);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
                 </svg>
             </div>
             <span class="text-white font-bold text-base tracking-tight">PHONE REPAIR</span>
-            <button @click="open = false" class="md:hidden ml-auto text-white opacity-60 hover:opacity-100 text-lg leading-none">✕</button>
+            <button @click="open = false" type="button"
+                    class="md:hidden ml-auto text-white opacity-60 hover:opacity-100"
+                    aria-label="Tutup menu">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+                    <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+            </button>
         </div>
 
-        <!-- Nav -->
-        <nav class="flex-1 px-3 pt-5 overflow-y-auto">
-
+        <nav class="flex-1 px-3 pt-5 overflow-y-auto" aria-label="Navigasi panel">
             <span class="nav-section-label">Menu</span>
 
-            {{-- Dashboard — semua role --}}
             <a href="{{ route('dashboard') }}"
-               class="sidebar-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-                    <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+               class="sidebar-nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+               @if (request()->routeIs('dashboard')) aria-current="page" @endif>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
                 </svg>
                 Dashboard
             </a>
 
-            {{-- Data Servis — semua role (owner read-only) --}}
             <a href="{{ route('servis.index') }}"
-               class="sidebar-nav-item {{ request()->routeIs('servis.*') ? 'active' : '' }}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+               class="sidebar-nav-item {{ request()->routeIs('servis.*') ? 'active' : '' }}"
+               @if (request()->routeIs('servis.*')) aria-current="page" @endif>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>
                 </svg>
                 Data Servis
-                <span class="nav-badge">{{ \App\Models\Servis::count() }}</span>
+                {{-- Nilai ini dibagikan view composer dan di-cache satu menit,
+                     tidak lagi query langsung dari dalam template. --}}
+                <span class="nav-badge">{{ $jumlahServis ?? 0 }}</span>
             </a>
 
-            {{-- Laporan & Statistik — Owner only --}}
-            @if($userRole === 'owner')
+            @if ($userRole === 'owner')
                 <span class="nav-section-label">Manajemen</span>
 
                 <a href="{{ route('laporan.index') }}"
                    class="sidebar-nav-item {{ request()->routeIs('laporan.*') ? 'active' : '' }}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/>
                     </svg>
                     Laporan
                 </a>
 
                 <a href="{{ route('statistik.index') }}"
                    class="sidebar-nav-item {{ request()->routeIs('statistik.*') ? 'active' : '' }}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="18" y1="20" x2="18" y2="10"/>
-                        <line x1="12" y1="20" x2="12" y2="4"/>
-                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
                     </svg>
                     Statistik
                 </a>
             @endif
 
+            @if ($userRole === 'admin')
+                <span class="nav-section-label">Pengaturan</span>
+
+                <a href="{{ route('setting.index') }}"
+                   class="sidebar-nav-item {{ request()->routeIs('setting.*') ? 'active' : '' }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Pengaturan Nota
+                </a>
+            @endif
         </nav>
 
-        <!-- Footer: User + Logout -->
-        <div class="px-3 pb-6 pt-4" style="border-top:1px solid rgba(255,255,255,0.06);">
+        <div class="px-3 pb-6 pt-4" style="border-top:1px solid rgba(255,255,255,.07);">
             <div class="flex items-center gap-3 px-3 py-2 rounded-xl mb-1">
-                <div class="flex items-center justify-center rounded-full flex-shrink-0 text-white font-bold"
-                     style="width:34px;height:34px;background:linear-gradient(135deg,#4c6ef5,#9c36b5);font-size:12px;">
+                <div class="avatar" style="width:34px;height:34px;">
                     {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 2)) }}
                 </div>
                 <div class="min-w-0 flex-1">
-                    <div class="text-white font-semibold truncate" style="font-size:13px;">{{ auth()->user()->name ?? 'Admin' }}</div>
+                    <div class="text-white font-semibold truncate" style="font-size:13px;">
+                        {{ auth()->user()->name ?? 'Pengguna' }}
+                    </div>
                     <div style="margin-top:2px;">
                         <span class="role-badge {{ $userRole }}">{{ ucfirst($userRole) }}</span>
                     </div>
@@ -168,105 +247,81 @@
 
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit"
-                        class="w-full flex items-center gap-3 px-3 py-2 rounded-xl font-medium transition-all duration-200"
-                        style="font-size:14px;color:#fa5252;background:transparent;border:none;cursor:pointer;"
-                        onmouseover="this.style.background='rgba(250,82,82,0.12)'"
-                        onmouseout="this.style.background='transparent'">
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <button type="submit" class="logout-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
-                        <polyline points="16 17 21 12 16 7"/>
-                        <line x1="21" y1="12" x2="9" y2="12"/>
+                        <path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>
                     </svg>
-                    Logout
+                    Keluar
                 </button>
             </form>
         </div>
     </aside>
 
-    <!-- Overlay mobile -->
+    {{-- Overlay mobile --}}
     <div x-show="open" @click="open = false" x-cloak
          class="fixed inset-0 z-30 md:hidden"
-         style="background:rgba(0,0,0,0.4);"
-         x-transition:enter="transition-opacity duration-200"
-         x-transition:enter-start="opacity-0"
-         x-transition:enter-end="opacity-100"
-         x-transition:leave="transition-opacity duration-200"
-         x-transition:leave-start="opacity-100"
-         x-transition:leave-end="opacity-0">
-    </div>
+         style="background:rgba(0,0,0,.45);"
+         x-transition.opacity.duration.200ms></div>
 
-    <!-- ═══════════════════════ MAIN AREA ═══════════════════════ -->
+    {{-- ═══════════════════════ AREA UTAMA ═══════════════════════ --}}
     <div class="flex-1 flex flex-col min-w-0">
 
-        <!-- TOPBAR -->
-        <header class="sticky top-0 z-20 flex items-center justify-between px-8 py-4"
-                style="background:#fff; border-bottom:1px solid #e8eaf0;">
-
+        <header class="topbar sticky top-0 z-20 flex items-center justify-between px-4 sm:px-8 py-4">
             <div class="flex items-center gap-4">
-                <button @click="open = true"
-                        class="md:hidden flex items-center justify-center rounded-lg transition"
-                        style="width:36px;height:36px;color:#8a93b2;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="12" x2="21" y2="12"/>
-                        <line x1="3" y1="6" x2="21" y2="6"/>
-                        <line x1="3" y1="18" x2="21" y2="18"/>
+                <button @click="open = true" type="button"
+                        class="md:hidden flex items-center justify-center rounded-lg"
+                        style="width:36px;height:36px;color:var(--muted);"
+                        aria-label="Buka menu">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/>
                     </svg>
                 </button>
 
                 @isset($header)
-                    <div style="font-size:18px;font-weight:700;color:#1a1f36;line-height:1.2;">
+                    <h1 style="font-size:18px;font-weight:700;color:var(--navy);line-height:1.2;margin:0;">
                         {{ $header }}
-                    </div>
+                    </h1>
                 @endisset
             </div>
 
             <div class="flex items-center gap-3">
-                {{-- Role badge di topbar --}}
                 <span class="role-badge {{ $userRole }} hidden sm:inline-block">{{ ucfirst($userRole) }}</span>
-                <div class="flex items-center justify-center rounded-full text-white font-bold flex-shrink-0"
-                     style="width:32px;height:32px;background:linear-gradient(135deg,#4c6ef5,#9c36b5);font-size:12px;">
+                <div class="avatar" style="width:32px;height:32px;">
                     {{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 2)) }}
                 </div>
-                <span class="hidden sm:block font-medium" style="font-size:14px;color:#1a1f36;">
+                <span class="hidden sm:block font-medium" style="font-size:14px;color:var(--navy);">
                     {{ auth()->user()->name ?? '' }}
                 </span>
             </div>
         </header>
 
-        <!-- CONTENT -->
-        <main class="flex-1 py-7 px-4 sm:px-8">
+        <main id="konten" class="flex-1 py-7 px-4 sm:px-8">
             <div class="max-w-7xl mx-auto">
 
-                @if(session('success'))
-                    <div
-                        x-data="{ show: true }"
-                        x-init="setTimeout(() => show = false, 3000)"
-                        x-show="show"
-                        x-cloak
-                        x-transition:enter="transition ease-out duration-300"
-                        x-transition:enter-start="opacity-0 -translate-y-2"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-200"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0"
-                        class="mb-6">
-                        <div class="flex items-center justify-between px-4 py-3 rounded-xl shadow-sm"
-                             style="background:#d3f9d8;border:1px solid #b2f2bb;color:#2f9e44;">
-                            <div class="flex items-center gap-2">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="20 6 9 17 4 12"/>
-                                </svg>
-                                <span class="font-medium" style="font-size:14px;">{{ session('success') }}</span>
+                @foreach (['success' => 'green', 'error' => 'red'] as $jenis => $warna)
+                    @if (session($jenis))
+                        <div x-data="{ show: true }"
+                             x-init="setTimeout(() => show = false, 4000)"
+                             x-show="show" x-cloak
+                             x-transition.opacity.duration.200ms
+                             class="mb-6" role="status">
+                            <div class="flex items-center justify-between px-4 py-3 rounded-xl"
+                                 style="background:var(--{{ $warna }}-wash);border:1px solid var(--{{ $warna }});color:var(--{{ $warna }});">
+                                <span class="font-medium" style="font-size:14px;">{{ session($jenis) }}</span>
+                                <button @click="show = false" type="button" class="opacity-60 hover:opacity-100"
+                                        aria-label="Tutup pesan">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+                                        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                                    </svg>
+                                </button>
                             </div>
-                            <button @click="show = false" class="opacity-60 hover:opacity-100">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                            </button>
                         </div>
-                    </div>
-                @endif
+                    @endif
+                @endforeach
 
                 {{ $slot }}
 
@@ -276,5 +331,6 @@
     </div>
 </div>
 
+@stack('scripts')
 </body>
 </html>

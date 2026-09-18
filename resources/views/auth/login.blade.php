@@ -39,7 +39,7 @@
         </p>
     </div>
 
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('login') }}" class="login-form">
         @csrf
 
         {{-- Email --}}
@@ -63,8 +63,6 @@
                        border-radius:8px; font-size:0.875rem;
                        color:#f1f5f9; outline:none;
                        transition: border-color 0.2s, box-shadow 0.2s;"
-                onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.12)'"
-                onblur="this.style.borderColor='#1e293b'; this.style.boxShadow='none'"
             />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
@@ -89,19 +87,15 @@
                            border-radius:8px; font-size:0.875rem;
                            color:#f1f5f9; outline:none;
                            transition: border-color 0.2s, box-shadow 0.2s;"
-                    onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.12)'"
-                    onblur="this.style.borderColor='#1e293b'; this.style.boxShadow='none'"
                 />
                 <button
                     type="button"
-                    onclick="togglePassword()"
+                    data-aksi="toggle-password"
                     tabindex="-1"
                     style="position:absolute; right:12px; top:50%; transform:translateY(-50%);
                            background:none; border:none; cursor:pointer; padding:0;
                            color:#475569; display:flex; align-items:center;
                            transition: color 0.15s;"
-                    onmouseover="this.style.color='#818cf8'"
-                    onmouseout="this.style.color='#475569'"
                     aria-label="Tampilkan password"
                 >
                     <svg id="eye-show" width="17" height="17" fill="none" stroke="currentColor"
@@ -141,10 +135,7 @@
                    cursor:pointer; letter-spacing:0.06em; text-transform:uppercase;
                    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
                    box-shadow: 0 0 0 0 rgba(99,102,241,0);"
-            onmouseover="this.style.background='#4f46e5'; this.style.boxShadow='0 4px 14px rgba(99,102,241,0.35)'"
-            onmouseout="this.style.background='#6366f1'; this.style.boxShadow='0 0 0 0 rgba(99,102,241,0)'"
-            onmousedown="this.style.transform='scale(0.98)'"
-            onmouseup="this.style.transform='scale(1)'"
+            
         >
             Masuk
         </button>
@@ -156,8 +147,7 @@
                    style="font-size:0.78rem; color:#6366f1;
                           text-decoration:none; opacity:0.8;
                           transition: opacity 0.15s;"
-                   onmouseover="this.style.opacity='1'"
-                   onmouseout="this.style.opacity='0.8'">
+                   >
                     Lupa password?
                 </a>
             </div>
@@ -180,20 +170,52 @@
         </span>
     </div>
 
-    <script>
-        function togglePassword() {
-            const input = document.getElementById('password');
-            const show  = document.getElementById('eye-show');
-            const hide  = document.getElementById('eye-hide');
-            if (input.type === 'password') {
-                input.type = 'text';
-                show.style.display = 'none';
-                hide.style.display = 'block';
-            } else {
-                input.type = 'password';
-                show.style.display = 'block';
-                hide.style.display = 'none';
-            }
+    <style>
+        /* Efek fokus dan sorot dulu ditulis sebagai atribut onfocus, onblur,
+           onmouseover, dan onmouseout yang menimpa style elemen lewat
+           JavaScript. Semuanya kini menjadi aturan CSS biasa. */
+        .login-form input[type="email"]:focus,
+        .login-form input[type="password"]:focus {
+            border-color: #6366f1 !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, .12);
         }
+
+        .login-form button[data-aksi="toggle-password"]:hover { color: #818cf8; }
+
+        .login-form button[type="submit"]:hover {
+            background: #4f46e5 !important;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, .35);
+        }
+
+        .login-form a:hover { opacity: 1 !important; }
+
+        .login-form button[type="submit"]:active { transform: scale(.98); }
+    </style>
+
+    <script>
+        (function () {
+            const tombol = document.querySelector('[data-aksi="toggle-password"]');
+            const input  = document.getElementById('password');
+
+            if (!tombol || !input) {
+                return;
+            }
+
+            tombol.addEventListener('click', function () {
+                const tersembunyi = input.type === 'password';
+                const show = document.getElementById('eye-show');
+                const hide = document.getElementById('eye-hide');
+
+                input.type = tersembunyi ? 'text' : 'password';
+
+                if (show) { show.style.display = tersembunyi ? 'none' : 'block'; }
+                if (hide) { hide.style.display = tersembunyi ? 'block' : 'none'; }
+
+                tombol.setAttribute(
+                    'aria-label',
+                    tersembunyi ? 'Sembunyikan password' : 'Tampilkan password',
+                );
+            });
+        })();
     </script>
 </x-guest-layout>

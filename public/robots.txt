@@ -1,2 +1,23 @@
+# Halaman publik boleh diindeks; seluruh area yang memerlukan login tidak.
 User-agent: *
-Disallow:
+Allow: /$
+Allow: /cek-servis
+Allow: /kebijakan-privasi
+Allow: /syarat-ketentuan
+
+Disallow: /dashboard
+Disallow: /servis
+Disallow: /laporan
+Disallow: /statistik
+Disallow: /setting
+Disallow: /profile
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /confirm-password
+Disallow: /verify-email
+Disallow: /storage
+Disallow: /up
+
+Sitemap: /sitemap.xml

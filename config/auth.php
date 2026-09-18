@@ -112,4 +112,33 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Pendaftaran Mandiri
+    |--------------------------------------------------------------------------
+    |
+    | Aplikasi ini hanya dipakai staf internal toko, jadi halaman pendaftaran
+    | ditutup secara bawaan. Kalau dibiarkan terbuka, siapa pun yang membuka
+    | alamat situs bisa membuat akun sendiri dan langsung melihat seluruh
+    | data pelanggan.
+    |
+    | Akun dibuat lewat: php artisan user:create
+    |
+    | Nyalakan sementara dengan AUTH_REGISTRATION_ENABLED=true bila memang
+    | dibutuhkan, misalnya saat demonstrasi sistem.
+    |
+    */
+
+    'registration_enabled' => env('AUTH_REGISTRATION_ENABLED', false),
+
+    /*
+    | Peran yang diberikan kepada akun hasil pendaftaran mandiri.
+    |
+    | Nilainya tidak lagi ditulis keras di dalam controller, dan hanya
+    | berpengaruh ketika 'registration_enabled' bernilai true — yang memang
+    | tidak dianjurkan di lingkungan production.
+    */
+
+    'registration_role' => env('AUTH_REGISTRATION_ROLE', 'admin'),
+
 ];

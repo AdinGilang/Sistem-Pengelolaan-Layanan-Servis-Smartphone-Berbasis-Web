@@ -12,26 +12,43 @@ use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredUserController::class, 'create'])
-        ->name('register');
+    /*
+     * Pendaftaran mandiri dimatikan secara bawaan.
+     *
+     * Sebelumnya route ini terbuka untuk umum dan setiap pendaftar langsung
+     * mendapat peran "admin" — siapa pun yang menemukan alamat situs bisa
+     * membuat akun dengan akses penuh ke data pelanggan.
+     *
+     * Akun resmi dibuat lewat `php artisan user:create` atau seeder. Untuk
+     * keperluan demo, pendaftaran bisa dinyalakan kembali dengan mengisi
+     * AUTH_REGISTRATION_ENABLED=true pada berkas .env.
+     */
+    if (config('auth.registration_enabled')) {
+        Route::get('register', [RegisteredUserController::class, 'create'])->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+        Route::post('register', [RegisteredUserController::class, 'store'])
+            ->middleware('throttle:5,1');
+    }
 
-    Route::get('login', [AuthenticatedSessionController::class, 'create'])
-        ->name('login');
+    Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
 
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
+    Route::post('login', [AuthenticatedSessionController::class, 'store'])
+        ->middleware('throttle:10,1');
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 
+    // Pembatasan laju di sini menahan dua hal sekaligus: penyalahgunaan
+    // pengiriman surel dan penebakan alamat surel mana yang terdaftar.
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+        ->middleware('throttle:5,1')
         ->name('password.email');
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 
     Route::post('reset-password', [NewPasswordController::class, 'store'])
+        ->middleware('throttle:5,1')
         ->name('password.store');
 });
 
@@ -50,7 +67,8 @@ Route::middleware('auth')->group(function () {
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])
         ->name('password.confirm');
 
-    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+    Route::post('confirm-password', [ConfirmablePasswordController::class, 'store'])
+        ->middleware('throttle:6,1');
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 

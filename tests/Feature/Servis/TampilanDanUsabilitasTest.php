@@ -79,6 +79,10 @@ test('warna status servis sama persis di Data Servis, Detail, Dashboard, dan Inv
     // Regresi: sebelumnya status "Proses" berwarna biru di Data Servis dan
     // Detail Servis, tapi ungu di Dashboard dan Laporan — warna yang
     // berbeda-beda untuk arti yang sama persis di halaman yang berbeda.
+    //
+    // Invoice sekarang ikut memakai varian terang yang sama seperti halaman
+    // lain (bukan lagi varian :dark) sejak kop bergradasi gelapnya diganti
+    // desain dokumen yang lebih bersih dan ramah cetak.
     $servis = Servis::factory()->create(['status' => Servis::STATUS_PROSES]);
 
     $halIndex   = $this->actingAs($this->admin)->get('/servis')->getContent();
@@ -86,12 +90,11 @@ test('warna status servis sama persis di Data Servis, Detail, Dashboard, dan Inv
     $halDash    = $this->actingAs($this->admin)->get('/dashboard')->getContent();
     $halInvoice = $this->actingAs($this->admin)->get("/servis/{$servis->id}/invoice")->getContent();
 
-    foreach (['Data Servis' => $halIndex, 'Detail Servis' => $halShow] as $nama => $html) {
+    foreach (['Data Servis' => $halIndex, 'Detail Servis' => $halShow, 'Invoice' => $halInvoice] as $nama => $html) {
         expect($html)->toContain('badge--proses');
     }
 
-    expect($halDash)->toContain('badge--proses')
-        ->and($halInvoice)->toContain('badge--proses-dark');
+    expect($halDash)->toContain('badge--proses');
 });
 
 test('legenda pie chart statistik memakai warna yang sama persis dengan grafiknya', function () {
@@ -109,6 +112,8 @@ test('teks footer invoice mengikuti pengaturan tersimpan di semua tampilan invoi
     // Regresi: pratinjau invoice di layar sebelumnya menampilkan teks
     // footer yang ditulis tetap di kode, tidak peduli apa pun yang admin
     // simpan di halaman Pengaturan — padahal versi cetak dan PDF-nya benar.
+    // batas_pengambilan bahkan tidak dirender sama sekali di pratinjau
+    // layar, padahal sudah benar di versi cetak dan PDF.
     $this->actingAs($this->admin)->put('/setting', [
         'footer_thanks'     => 'Terima kasih khusus dari pengujian.',
         'garansi_servis'    => 'Garansi unik untuk pengujian.',
@@ -121,7 +126,8 @@ test('teks footer invoice mengikuti pengaturan tersimpan di semua tampilan invoi
         ->get("/servis/{$servis->id}/invoice")
         ->assertOk()
         ->assertSee('Terima kasih khusus dari pengujian.')
-        ->assertSee('Garansi unik untuk pengujian.');
+        ->assertSee('Garansi unik untuk pengujian.')
+        ->assertSee('Batas unik untuk pengujian.');
 });
 
 test('tautan kembali selalu tersedia di halaman detail, formulir, dan invoice', function () {
@@ -230,4 +236,19 @@ test('badge peran di topbar tetap kontras di atas latar putih', function () {
     $html = $this->actingAs($this->admin)->get('/dashboard')->getContent();
 
     expect($html)->toContain('.topbar .role-badge.admin');
+});
+
+test('pratinjau invoice berupa dokumen bersih, bukan kop bergradasi', function () {
+    // Regresi desain: versi sebelumnya memakai kop bergradasi navy-ke-biru
+    // dan kotak "TOTAL PEMBAYARAN" berlatar gelap penuh — pola visual
+    // templat dashboard generik yang janggal untuk dokumen yang akan
+    // dicetak dan diserahkan ke pelanggan.
+    $servis = Servis::factory()->create(['biaya' => 150000]);
+
+    $html = $this->actingAs($this->admin)->get("/servis/{$servis->id}/invoice")->getContent();
+
+    expect($html)
+        ->not->toContain('linear-gradient')
+        ->toContain('Rp 150.000')
+        ->toContain('inv-doc');
 });

@@ -5,10 +5,22 @@
 <style>
     * { margin:0; padding:0; box-sizing:border-box; }
 
-    /* 58mm = ~164px at 72dpi. DomPDF uses 96dpi → 58mm ≈ 219px usable */
+    /*
+     * Tinggi halaman TIDAK diatur di sini. Baris @page { size: 58mm auto; }
+     * pernah ada di sini dengan asumsi "auto" akan membuat tinggi kertas
+     * menyesuaikan panjang konten secara otomatis — tapi DomPDF hanya
+     * memakai ukuran dari CSS @page kalau nilainya berhasil diuraikan
+     * menjadi pasangan [lebar, tinggi] yang konkret; untuk "auto" nilainya
+     * tetap berupa string apa adanya dan diabaikan sepenuhnya. Ukuran
+     * kertas yang sesungguhnya dipakai selalu datang dari
+     * Dompdf::setPaper() yang dipanggil InvoiceController — lihat
+     * App\Modules\Invoice\Services\InvoicePdfHeight untuk perhitungannya.
+     *
+     * Margin di sini tetap dipakai DomPDF walau ukuran halamannya sendiri
+     * datang dari PHP.
+     */
     @page {
         margin: 4mm 3mm;
-        size: 58mm auto;
     }
 
     body {

@@ -1,5 +1,7 @@
 <x-app-layout>
     <x-slot name="header">Invoice</x-slot>
+    <x-slot name="backTo">{{ route('servis.show', $servis) }}</x-slot>
+    <x-slot name="backLabel">Kembali ke Detail</x-slot>
 
     <div class="max-w-3xl mx-auto space-y-4">
 
@@ -40,18 +42,23 @@
                 <div class="flex justify-between" style="color:rgba(255,255,255,0.85);font-size:12px;">
                     <div>
                         <div style="color:rgba(255,255,255,0.5);margin-bottom:2px;">Tanggal Masuk</div>
-                        <div style="font-weight:600;">{{ $servis->tanggal ? $servis->tanggal->format('d F Y') : '—' }}</div>
+                        <div style="font-weight:600;">{{ $servis->tanggal ? $servis->tanggal->translatedFormat('d F Y') : '—' }}</div>
                     </div>
                     <div style="text-align:center;">
                         <div style="color:rgba(255,255,255,0.5);margin-bottom:2px;">Status</div>
                         <div style="font-weight:600;">
-                            @if($servis->status == 'Selesai')
-                                <span style="background:rgba(74,222,128,0.25);color:#4ade80;padding:2px 12px;border-radius:20px;">Selesai</span>
-                            @elseif($servis->status == 'Proses')
-                                <span style="background:rgba(96,165,250,0.25);color:#60a5fa;padding:2px 12px;border-radius:20px;">Proses</span>
-                            @else
-                                <span style="background:rgba(251,191,36,0.25);color:#fbbf24;padding:2px 12px;border-radius:20px;">Menunggu</span>
-                            @endif
+                            {{--
+                                Sebelumnya warna status di sini ditulis ulang
+                                terpisah, dan "Proses" malah berwarna biru —
+                                padahal di setiap halaman lain (Data Servis,
+                                Dashboard, Laporan) warnanya ungu. Komponen ini
+                                memakai satu definisi rona warna yang sama di
+                                seluruh aplikasi, jadi status yang sama selalu
+                                terlihat sama di mana pun admin melihatnya.
+                                Prop :dark memilih varian terang yang memang
+                                dirancang untuk latar gelap seperti kop ini.
+                            --}}
+                            <x-status-badge :status="$servis->status" :dark="true" />
                         </div>
                     </div>
                     <div style="text-align:right;">
@@ -132,9 +139,16 @@
 
                 {{-- Footer --}}
                 <div style="margin-top:32px;padding-top:20px;border-top:1px dashed #e0e0e0;display:flex;justify-content:space-between;align-items:center;">
+                    {{--
+                        Sebelumnya teks ini ditulis tetap di sini, sehingga
+                        perubahan yang admin simpan lewat halaman Pengaturan
+                        Nota tidak pernah muncul di pratinjau layar ini —
+                        padahal versi cetak dan PDF-nya sudah benar memakai
+                        pengaturan tersimpan. Sekarang ketiganya konsisten.
+                    --}}
                     <div style="font-size:11px;color:#aaa;">
-                        Terima kasih telah mempercayakan perangkat Anda kepada kami.<br>
-                        Garansi servis berlaku 7 hari setelah pengambilan.
+                        {{ $footerThanks }}<br>
+                        {{ $footerGaransi }}
                     </div>
                     <div style="text-align:center;">
                         <div style="font-size:10px;color:#aaa;margin-bottom:40px;">Tanda Tangan Teknisi</div>

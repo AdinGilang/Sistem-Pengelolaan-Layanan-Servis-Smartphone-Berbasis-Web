@@ -27,47 +27,62 @@
                 </div>
             @endcan
 
-            {{-- Live Search --}}
-            <div class="relative">
-                <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400 transition bg-white">
-                    <div class="pl-3 text-gray-400">
-                        <svg id="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                        </svg>
-                        {{-- Loading spinner (hidden by default) --}}
-                        <svg id="search-spinner" class="hidden animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="#d1d5db" stroke-width="3"/>
-                            <path d="M12 2a10 10 0 0 1 10 10" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    <input
-                        id="live-search"
-                        type="text"
-                        value="{{ request('search') }}"
-                        placeholder="Cari pelanggan, kode, merk HP..."
-                        class="px-3 py-2 w-72 outline-none bg-transparent text-sm"
-                        autocomplete="off"
-                    >
-                    <button id="clear-search"
-                            class="{{ request('search') ? '' : 'hidden' }} pr-3 text-gray-400 hover:text-gray-600"
-                            type="button"
-                            aria-label="Bersihkan pencarian">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                {{-- Hint text --}}
-                <div id="search-hint" class="absolute right-0 mt-1 text-xs text-gray-400 hidden">
-                    Mengetik...
-                </div>
-            </div>
         </div>
 
-        <!-- Filter -->
+        {{-- Pencarian & filter.
+
+             Sebelumnya kotak pencarian berdiri sendiri di luar <form> apa
+             pun, murni mengandalkan JavaScript fetch(). Kalau skrip gagal
+             dimuat, menekan Enter di kotak itu tidak melakukan apa-apa —
+             tidak ada jalan mundur. Sekarang kotak pencarian ada DI DALAM
+             form yang sama dengan filter status, jadi menekan Enter tetap
+             mengirim pencarian sungguhan lewat GET biasa walau tanpa
+             JavaScript sama sekali. Saat JavaScript aktif, skrip di
+             partials.live-search cukup mencegat submit itu dan
+             menggantinya dengan fetch() tanpa memuat ulang halaman. --}}
         <div class="mb-6">
-            <form id="filter-form" method="GET" action="{{ route('servis.index') }}" class="flex flex-wrap gap-3 items-center">
-                <input type="hidden" name="search" id="filter-search-val" value="{{ request('search') }}">
+            <form id="filter-form" method="GET" action="{{ route('servis.index') }}"
+                  class="flex flex-col md:flex-row md:items-center flex-wrap gap-3">
+
+                <div class="relative">
+                    <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400 transition bg-white">
+                        <div class="pl-3 text-gray-400">
+                            <svg id="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            {{-- Loading spinner (hidden by default) --}}
+                            <svg id="search-spinner" class="hidden animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="10" stroke="#d1d5db" stroke-width="3"/>
+                                <path d="M12 2a10 10 0 0 1 10 10" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <label class="sr-only" for="live-search">Cari data servis</label>
+                        <input
+                            id="live-search"
+                            name="search"
+                            type="text"
+                            value="{{ request('search') }}"
+                            placeholder="Cari pelanggan, kode, merk HP..."
+                            class="px-3 py-2 w-72 outline-none bg-transparent text-sm"
+                            autocomplete="off"
+                        >
+                        <button id="clear-search"
+                                class="{{ request('search') ? '' : 'hidden' }} pr-3 text-gray-400 hover:text-gray-600"
+                                type="button"
+                                aria-label="Bersihkan pencarian">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    {{-- Hint text. aria-live memastikan pengguna pembaca layar
+                         juga diberi tahu saat status pencarian berubah, bukan
+                         hanya pengguna yang bisa melihat teksnya. --}}
+                    <div id="search-hint" class="absolute right-0 mt-1 text-xs text-gray-400 hidden" aria-live="polite">
+                        Mengetik...
+                    </div>
+                </div>
+
                 <label class="sr-only" for="filter-status">Saring berdasarkan status</label>
                 {{-- Pilihan status dibaca dari konstanta model, jadi menambah
                      status baru cukup di satu tempat. --}}
@@ -79,13 +94,18 @@
                 </select>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Filter</button>
                 <a href="{{ route('servis.index') }}" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Reset</a>
-                {{-- Showing result info --}}
-                @if(request('search'))
-                    <span class="text-xs text-gray-500 italic">
+
+                {{-- Info hasil. Diberi id supaya live-search bisa memperbarui
+                     teks ini juga — sebelumnya info ini hanya dirender sekali
+                     saat halaman dimuat penuh, lalu tidak pernah berubah lagi
+                     ketika admin mengetik pencarian baru lewat AJAX, sehingga
+                     angka dan kata kunci yang ditampilkan menjadi basi. --}}
+                <span id="hasil-info" class="text-xs text-gray-500 italic">
+                    @if(request('search'))
                         Hasil pencarian: <strong>"{{ request('search') }}"</strong>
                         — {{ $servis->total() }} data ditemukan
-                    </span>
-                @endif
+                    @endif
+                </span>
             </form>
         </div>
 
@@ -167,15 +187,11 @@
                                 @endif
                             </td>
 
-                            {{-- Status --}}
+                            {{-- Status. Sebelumnya "Proses" berwarna biru di sini,
+                                 padahal ungu di Dashboard dan Laporan — komponen
+                                 ini menjamin warnanya selalu sama di semua halaman. --}}
                             <td class="px-4 py-4 text-center">
-                                @if($s->status == 'Menunggu')
-                                    <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Menunggu</span>
-                                @elseif($s->status == 'Proses')
-                                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Proses</span>
-                                @else
-                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Selesai</span>
-                                @endif
+                                <x-status-badge :status="$s->status" />
                             </td>
 
                             {{-- Aksi --}}
@@ -199,6 +215,14 @@
 
                         </tr>
                     @empty
+                        {{-- Dua pesan berbeda untuk dua situasi berbeda. Sebelumnya
+                             kedua situasi ini memakai kalimat yang sama — admin yang
+                             baru pertama kali memakai sistem dan belum sempat
+                             menambah data apa pun tetap dikira "sedang mencari
+                             sesuatu", padahal ia tidak mengetik apa pun. --}}
+                        @php
+                            $adaFilter = filled(request('search')) || filled(request('status'));
+                        @endphp
                         <tr>
                             <td colspan="8" class="text-center py-10 text-gray-500">
                                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -207,7 +231,19 @@
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                     <path d="M14 2v6h6"/>
                                 </svg>
-                                Tidak ada data servis yang cocok dengan pencarian Anda.
+                                @if($adaFilter)
+                                    Tidak ada data servis yang cocok dengan pencarian Anda.
+                                    <div class="mt-1">
+                                        <a href="{{ route('servis.index') }}" class="text-blue-600 hover:underline text-xs">Hapus pencarian &amp; filter</a>
+                                    </div>
+                                @else
+                                    Belum ada data servis yang tercatat.
+                                    @can('create', \App\Modules\Servis\Models\Servis::class)
+                                        <div class="mt-1">
+                                            <a href="{{ route('servis.create') }}" class="text-blue-600 hover:underline text-xs">Tambah data servis pertama</a>
+                                        </div>
+                                    @endcan
+                                @endif
                             </td>
                         </tr>
                     @endforelse

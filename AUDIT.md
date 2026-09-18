@@ -13,8 +13,9 @@ Isinya dibagi menjadi:
 6. [Keputusan desain antarmuka](#6-keputusan-desain-antarmuka)
 7. [Daftar periksa keamanan sebelum push](#7-daftar-periksa-keamanan-sebelum-push)
 8. [Yang belum dikerjakan](#8-yang-belum-dikerjakan)
+9. [Perbaikan UI panel admin & pengujian UAT](#9-perbaikan-ui-panel-admin--pengujian-uat)
 
-Seluruh perbaikan diverifikasi oleh **99 test otomatis** (`php artisan test`).
+Seluruh perbaikan diverifikasi oleh **112 test otomatis** (`php artisan test`).
 
 ---
 
@@ -343,3 +344,174 @@ Disebutkan terbuka supaya jelas batas pekerjaan ini:
    JSON berlapis di baris lama. View sudah memasang penanganan cadangan
    sehingga tetap tampil benar, tetapi datanya baru rapi setelah baris
    tersebut disunting ulang.
+
+---
+
+## 9. Perbaikan UI panel admin & pengujian UAT
+
+Audit terpisah menyisir seluruh halaman panel (Dashboard, Data Servis,
+Detail/Tambah/Ubah Servis, Invoice, Laporan, Statistik, Pengaturan) khusus
+mencari bug tampilan dan hambatan kegunaan — bukan mengulang audit keamanan
+di atas. Setiap temuan diverifikasi lewat 13 test UAT baru
+(`tests/Feature/Servis/TampilanDanUsabilitasTest.php`) yang meniru langkah
+admin sungguhan, bukan sekadar memeriksa halaman tidak galat.
+
+### 9.1 Warna status yang berbeda-beda untuk arti yang sama
+
+Status "Proses" ternyata berwarna **biru** di Data Servis dan Detail Servis,
+tapi **ungu** di Dashboard dan Laporan, dan **biru dengan hex berbeda lagi**
+di Invoice — lima definisi warna terpisah untuk satu status yang sama,
+ditulis manual di lima tempat berbeda sejak awal proyek. Admin yang
+berpindah dari Dashboard ke Data Servis melihat warna status berubah untuk
+data yang persis sama.
+
+**Perbaikan:** komponen `<x-status-badge :status="$s->status" />` sebagai
+satu-satunya sumber warna status di seluruh aplikasi, dengan varian `:dark`
+untuk latar gelap seperti kop invoice (rona warnanya tetap sama, hanya
+kecerahannya dinaikkan supaya kontras — bukan tebakan filter CSS). Diterapkan
+di Data Servis, Detail Servis, Dashboard, Laporan, dan Invoice.
+
+Legenda pie chart Statistik ikut diperbaiki dengan bug serupa: warna kotak
+legenda di-hardcode terpisah dari warna asli yang dipakai Chart.js
+(`resources/js/statistik.js`), sehingga kotak legenda dan irisan pie yang
+sesungguhnya tidak cocok. Sekarang keduanya memakai hex yang identik.
+
+### 9.2 Tautan "Kembali" hanya ada di paling bawah halaman
+
+Halaman Detail Servis, Tambah Servis, dan Ubah Servis sepanjang 300-600
+baris hanya punya satu tombol "Kembali" di paling bawah. Admin harus
+menggulir seluruh halaman dulu untuk kembali ke daftar.
+
+**Perbaikan:** slot `backTo`/`backLabel` opsional pada `<x-app-layout>`,
+dirender di topbar yang *sticky* — selalu terlihat di posisi gulir mana pun.
+Diterapkan di Detail/Tambah/Ubah Servis, Invoice, dan Pengaturan.
+
+### 9.3 Kotak pencarian tidak berfungsi tanpa JavaScript
+
+Kotak pencarian di Data Servis berdiri sendiri di luar elemen `<form>` apa
+pun, murni mengandalkan `fetch()`. Bila skrip gagal dimuat, menekan Enter di
+kotak itu tidak melakukan apa-apa sama sekali — tidak ada jalan mundur.
+
+**Perbaikan:** kotak pencarian dipindah ke dalam form filter yang
+sesungguhnya. Menekan Enter tetap mengirim pencarian nyata lewat GET biasa
+walau JavaScript mati total; saat JavaScript aktif, skrip yang sama
+mencegat submit itu dan menggantinya dengan `fetch()` tanpa memuat ulang
+halaman — pola *progressive enhancement* yang sama dipakai di beranda.
+
+### 9.4 Info hasil pencarian menjadi basi setelah pencarian AJAX
+
+Teks "Hasil pencarian: ... — N data ditemukan" hanya dirender sekali saat
+halaman dimuat penuh. Setelah admin mengetik kata kunci baru lewat pencarian
+langsung, tabel ikut berubah tetapi teks info ini tidak — menampilkan kata
+kunci dan angka dari pencarian sebelumnya.
+
+**Perbaikan:** info hasil diberi `id="hasil-info"` dan ikut ditimpa oleh
+skrip pencarian setiap kali jawaban baru datang, persis seperti tabel dan
+paginasi.
+
+### 9.5 Satu pesan "tidak ada data" untuk dua situasi berbeda
+
+Tabel Data Servis yang kosong selalu menampilkan "Tidak ada data servis yang
+cocok dengan pencarian Anda" — termasuk saat database benar-benar belum
+punya satu baris pun (instalasi baru, sebelum admin sempat menambah data
+apa pun). Pesan itu mengasumsikan admin sedang mencari sesuatu, padahal
+belum mengetik apa pun.
+
+**Perbaikan:** dua pesan berbeda. Database kosong tanpa filter aktif
+menampilkan "Belum ada data servis yang tercatat" dengan tautan langsung ke
+formulir tambah data (hanya untuk Admin — Owner melihat pesan yang sama
+tanpa ajakan menambah, karena memang tidak berwenang). Pencarian/filter
+yang tidak membuahkan hasil menampilkan pesan berbeda dengan tautan untuk
+menghapus filter.
+
+### 9.6 Data hilang diam-diam di papan pola kunci
+
+Kanvas pola kunci di Tambah/Ubah Servis membuang pola yang digambar bila
+kurang dari 4 titik — sesuai perilaku kunci pola Android asli — tetapi
+melakukannya **tanpa pemberitahuan apa pun**. Admin yang menggambar pola
+pendek melihat angka "2 titik" dan "1-2" tertulis di layar, lalu setelah
+disimpan datanya kosong tanpa penjelasan.
+
+**Perbaikan:** pesan peringatan merah muncul di bawah kanvas begitu pola
+yang digambar kurang dari 4 titik, sebelum admin sempat menyimpan.
+
+### 9.7 Bug fungsional: pengaturan nota tidak berlaku di pratinjau layar
+
+`InvoiceController` sudah mengirim teks footer dari halaman Pengaturan ke
+setiap tampilan invoice (layar, cetak, PDF) — tetapi `invoice/show.blade.php`
+(pratinjau di layar) tidak pernah memakainya, tetap menampilkan kalimat yang
+ditulis tetap di kode. Versi cetak dan PDF sudah benar; hanya pratinjau
+layar yang tertinggal. Admin yang mengubah teks garansi di Pengaturan lalu
+mengecek pratinjau layar bisa mengira perubahannya gagal tersimpan, padahal
+sudah benar di dokumen yang sesungguhnya dicetak.
+
+**Perbaikan:** pratinjau layar kini memakai `$footerThanks`/`$footerGaransi`
+yang sama dengan cetak dan PDF.
+
+### 9.8 Kotak ikon kosong — sisa pembersihan emoji
+
+Dua bug visual ditemukan sebagai efek samping pembersihan emoji pada audit
+sebelumnya: kotak abu-abu di depan input Nomor WhatsApp (Tambah & Ubah
+Servis) dan kotak ikon pada status kosong Laporan sama-sama kehilangan
+isinya, meninggalkan ruang kosong yang terlihat rusak.
+
+**Perbaikan:** kotak WhatsApp diisi ikon WhatsApp yang sesuai; kotak Laporan
+diisi ikon dokumen kosong yang konsisten dengan pola *empty state* di
+halaman lain.
+
+### 9.9 Emoji yang terlewat dari audit sebelumnya
+
+Audit sebelumnya menyatakan seluruh emoji telah dihapus, tetapi sapuan
+sebelumnya memakai rentang unicode yang tidak mencakup ✅/❌/⚠️. Ditemukan
+tersisa di skrip pencocokan PIN (Tambah & Ubah Servis), status estimasi
+(Ubah Servis), dan pesan sukses (Pengaturan) — total 27 byte emoji di tiga
+berkas. Sudah dibersihkan seluruhnya dan diverifikasi dengan sapuan ulang.
+
+### 9.10 Pesan sukses tampil dua kali di halaman Pengaturan
+
+Layout panel sudah merender *toast* `session('success')` secara global di
+bagian atas setiap halaman. Halaman Pengaturan Invoice ternyata merender
+pesan yang sama sekali lagi secara terpisah, sehingga setelah menyimpan,
+admin melihat pesan sukses yang identik dua kali sekaligus di layar.
+
+**Perbaikan:** blok duplikat dihapus, mengandalkan *toast* global.
+
+### 9.11 Label formulir yang tidak tertaut ke kolomnya
+
+Tiga kolom pada Pengaturan Invoice dan dropdown Bulan/Tahun pada Laporan
+memakai teks label berupa `<div>` polos atau `<label>` tanpa atribut `for`,
+tidak tertaut ke kolom masukannya secara terprogram. Pengguna pembaca layar
+yang berpindah kolom lewat Tab tidak mendengar nama kolom diumumkan; pengguna
+mouse juga tidak bisa klik label untuk memfokuskan kolom.
+
+**Perbaikan:** setiap label diberi `for` yang menunjuk ke `id` kolom
+masukannya. Kotak pencarian Data Servis dan dropdown filter status ikut
+diberi label tersembunyi (`sr-only`) yang sebelumnya tidak ada.
+
+### 9.12 Tanggal berbahasa Inggris di tengah antarmuka berbahasa Indonesia
+
+Enam lokasi (`Invoice/show`, `Servis/edit`, `Servis/show` dua kali,
+`Laporan/cetak`, `Laporan/pdf`) memanggil `->format('d F Y')`, yang selalu
+menghasilkan nama bulan **Inggris** ("15 January 2026") apa pun locale
+aplikasinya — berbeda dari halaman lain yang sudah benar memakai
+`translatedFormat()`. Bug ini khususnya terlihat janggal pada invoice yang
+diserahkan langsung ke pelanggan.
+
+**Perbaikan:** keenamnya diganti `translatedFormat()`, konsisten dengan
+seluruh halaman lain.
+
+### Ringkasan
+
+| Kategori temuan | Jumlah |
+|---|---|
+| Warna tidak konsisten lintas halaman | 4 tempat (disatukan lewat 1 komponen) |
+| Navigasi kembali hilang di halaman panjang | 5 halaman |
+| Bug fungsional (pengaturan tidak berlaku, data hilang diam-diam) | 2 |
+| Bug visual (kotak kosong) | 2 |
+| Emoji tertinggal dari audit sebelumnya | 3 berkas |
+| Label formulir tidak tertaut | 5 kolom |
+| Tanggal berbahasa Inggris | 6 lokasi |
+| Pesan sukses dobel | 1 halaman |
+
+Seluruhnya diverifikasi lewat 13 test UAT baru; total test otomatis proyek
+naik dari 99 menjadi **112**, semuanya lolos.

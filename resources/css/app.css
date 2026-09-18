@@ -338,6 +338,18 @@ textarea:focus-visible {
 .badge--selesai  { background: var(--green-wash);  color: var(--green); }
 .badge--netral   { background: var(--bg);          color: var(--muted); }
 
+/*
+ * Varian untuk latar gelap (kop invoice bergradasi navy). Rona warnanya
+ * sama persis dengan varian di atas — hanya kecerahannya dinaikkan supaya
+ * tetap terbaca di atas warna gelap, bukan warna yang ditebak terpisah.
+ * "Proses" sebelumnya malah ditulis biru di sini (lihat AUDIT.md), padahal
+ * di setiap halaman lain warna "Proses" selalu ungu.
+ */
+.badge--menunggu-dark { background: rgba(251, 191, 36, .22); color: #fbbf24; }
+.badge--proses-dark   { background: rgba(167, 139, 250, .22); color: #c4b5fd; }
+.badge--selesai-dark  { background: rgba(74, 222, 128, .22); color: #4ade80; }
+.badge--netral-dark   { background: rgba(255, 255, 255, .14); color: rgba(255, 255, 255, .8); }
+
 /* ==========================================================================
    Skeleton loader
    --------------------------------------------------------------------------

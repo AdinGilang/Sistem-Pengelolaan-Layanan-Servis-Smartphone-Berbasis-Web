@@ -32,9 +32,12 @@
     <form method="GET" action="{{ route('laporan.index') }}" id="filterForm">
         <div style="background:#fff;border-radius:14px;padding:18px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);margin-bottom:22px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
 
+            {{-- Label sebelumnya berupa <div> polos tanpa "for", jadi
+                 pengguna pembaca layar yang fokus ke dropdown ini tidak
+                 pernah mendengar "Bulan"/"Tahun" diumumkan. --}}
             <div>
-                <div style="font-size:11px;font-weight:600;color:#8a93b2;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Bulan</div>
-                <select name="bulan"
+                <label for="laporan-bulan" style="display:block;font-size:11px;font-weight:600;color:#8a93b2;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Bulan</label>
+                <select name="bulan" id="laporan-bulan"
                         style="padding:8px 12px;border-radius:8px;border:1.5px solid #e8eaf0;font-size:13px;color:#1a1f36;font-family:inherit;background:#fff;cursor:pointer;min-width:130px;">
                     @foreach($listBulan as $num => $nama)
                         <option value="{{ $num }}" {{ $bulan == $num ? 'selected' : '' }}>{{ $nama }}</option>
@@ -43,8 +46,8 @@
             </div>
 
             <div>
-                <div style="font-size:11px;font-weight:600;color:#8a93b2;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Tahun</div>
-                <select name="tahun"
+                <label for="laporan-tahun" style="display:block;font-size:11px;font-weight:600;color:#8a93b2;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Tahun</label>
+                <select name="tahun" id="laporan-tahun"
                         style="padding:8px 12px;border-radius:8px;border:1.5px solid #e8eaf0;font-size:13px;color:#1a1f36;font-family:inherit;background:#fff;cursor:pointer;min-width:100px;">
                     @foreach($listTahun as $y)
                         <option value="{{ $y }}" {{ $tahun == $y ? 'selected' : '' }}>{{ $y }}</option>
@@ -200,10 +203,17 @@
         </div>
 
         @if($data->isEmpty())
+            {{-- Kotak ikon di sini sebelumnya kosong tanpa isi apa pun —
+                 sisa emoji yang terhapus tanpa penggantinya. --}}
             <div style="padding:48px 0;text-align:center;color:#8a93b2;">
-                <div style="font-size:36px;margin-bottom:10px;"></div>
-                <div style="font-size:14px;font-weight:600;">Tidak ada data servis</div>
-                <div style="font-size:12px;margin-top:4px;">untuk bulan {{ $namaBulan }} {{ $tahun }}</div>
+                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                     style="margin:0 auto 10px;opacity:.5;" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h6"/>
+                </svg>
+                <div style="font-size:14px;font-weight:600;">Belum ada data servis</div>
+                <div style="font-size:12px;margin-top:4px;">untuk bulan {{ $namaBulan }} {{ $tahun }}. Coba pilih periode lain di atas.</div>
             </div>
         @else
             <div style="overflow-x:auto;">
@@ -221,14 +231,6 @@
                     </thead>
                     <tbody>
                         @foreach($data as $i => $item)
-                            @php
-                                $statusStyle = match($item->status) {
-                                    'Menunggu' => 'background:rgba(245,159,0,0.12);color:#d08700;',
-                                    'Proses'   => 'background:rgba(156,54,181,0.12);color:#8a2be2;',
-                                    'Selesai'  => 'background:rgba(47,158,68,0.12);color:#2f9e44;',
-                                    default    => 'background:#f0f2f7;color:#8a93b2;',
-                                };
-                            @endphp
                             <tr style="border-bottom:1px solid #f4f5f9;transition:background .15s;"
                                 class="aksi-hover"
                                 >
@@ -241,9 +243,7 @@
                                 <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#1a1f36;">{{ $item->pelanggan }}</td>
                                 <td style="padding:12px 16px;font-size:13px;color:#4a5568;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $item->kerusakan }}</td>
                                 <td style="padding:12px 16px;">
-                                    <span style="font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;{{ $statusStyle }}">
-                                        {{ $item->status }}
-                                    </span>
+                                    <x-status-badge :status="$item->status" style="font-size:11px;" />
                                 </td>
                                 <td style="padding:12px 16px;font-size:13px;font-weight:600;color:#1a1f36;text-align:right;">
                                     @if($item->biaya)

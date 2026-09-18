@@ -3,7 +3,7 @@
 /**
  * Pencarian langsung pada daftar servis.
  *
- * Dua hal yang diperbaiki dari versi sebelumnya:
+ * Tiga hal yang diperbaiki dari versi sebelumnya:
  *
  * 1. Selama menunggu jawaban server, tabel kini menampilkan skeleton row.
  *    Sebelumnya isi tabel dibiarkan apa adanya lalu tiba-tiba diganti,
@@ -12,17 +12,27 @@
  * 2. Tombol bersihkan tidak lagi memakai atribut onclick di dalam HTML.
  *    Semua perilaku dipasang lewat addEventListener, sehingga Content
  *    Security Policy tidak perlu melonggarkan skrip inline untuk halaman ini.
+ *
+ * 3. Teks "Hasil pencarian: ... — N data ditemukan" dulu hanya dirender
+ *    sekali saat halaman dimuat penuh dan tidak pernah ikut diperbarui oleh
+ *    pencarian AJAX, sehingga informasinya cepat basi. Sekarang elemen
+ *    #hasil-info ikut ditimpa setiap kali jawaban baru datang.
+ *
+ * Kotak pencarian sendiri kini berada di dalam <form id="filter-form">
+ * yang sungguhan (bukan lagi berdiri sendiri di luar form apa pun), jadi
+ * menekan Enter tetap mengirim pencarian nyata lewat GET biasa walau
+ * skrip ini gagal dimuat sama sekali.
  */
 (function () {
-    const input     = document.getElementById('live-search');
-    const clearBtn  = document.getElementById('clear-search');
-    const icon      = document.getElementById('search-icon');
-    const spinner   = document.getElementById('search-spinner');
-    const hint      = document.getElementById('search-hint');
-    const filterVal = document.getElementById('filter-search-val');
-    const statusSel = document.getElementById('filter-status');
-    const tableBody = document.getElementById('table-body');
-    const pagination = document.getElementById('pagination-wrapper');
+    const input       = document.getElementById('live-search');
+    const clearBtn    = document.getElementById('clear-search');
+    const icon        = document.getElementById('search-icon');
+    const spinner     = document.getElementById('search-spinner');
+    const hint        = document.getElementById('search-hint');
+    const statusSel   = document.getElementById('filter-status');
+    const tableBody   = document.getElementById('table-body');
+    const pagination  = document.getElementById('pagination-wrapper');
+    const hasilInfo   = document.getElementById('hasil-info');
 
     if (!input || !tableBody) {
         return;
@@ -81,10 +91,6 @@
 
         window.history.replaceState({}, '', url.toString());
 
-        if (filterVal) {
-            filterVal.value = nilai;
-        }
-
         mulaiMemuat();
 
         // Penanda urutan permintaan: jawaban yang datang terlambat dari
@@ -108,6 +114,11 @@
                 const pagBaru = doc.getElementById('pagination-wrapper');
                 if (pagBaru && pagination) {
                     pagination.innerHTML = pagBaru.innerHTML;
+                }
+
+                const infoBaru = doc.getElementById('hasil-info');
+                if (infoBaru && hasilInfo) {
+                    hasilInfo.innerHTML = infoBaru.innerHTML;
                 }
 
                 selesaiMemuat();

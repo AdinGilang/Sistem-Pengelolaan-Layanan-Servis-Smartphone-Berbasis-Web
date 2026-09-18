@@ -3,15 +3,6 @@
         Statistik
     </x-slot>
 
-    @php
-        $namaBulanPanjang = [
-            1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April',
-            5=>'Mei', 6=>'Juni', 7=>'Juli', 8=>'Agustus',
-            9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember',
-        ];
-    @endphp
-
-
     {{-- ── FILTER TAHUN ── --}}
     <form method="GET" action="{{ route('statistik.index') }}" id="filterForm">
         <div style="background:#fff;border-radius:14px;padding:16px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);margin-bottom:22px;display:flex;align-items:center;gap:14px;">
@@ -102,16 +93,23 @@
             <div style="padding:20px 22px;display:flex;align-items:center;justify-content:center;">
                 <canvas id="chartStatus" height="200" style="max-width:260px;"></canvas>
             </div>
-            {{-- Legend --}}
-            <div style="padding:0 22px 18px;display:flex;gap:16px;justify-content:center;">
+            {{-- Legend.
+
+                 Warna swatch di sini sebelumnya di-hardcode terpisah dari
+                 warna yang benar-benar dipakai Chart.js (resources/js/
+                 statistik.js), sehingga tidak cocok satu sama lain — admin
+                 melihat kotak oranye terang di legenda untuk irisan pie
+                 yang sebenarnya berwarna oranye kecoklatan. Sekarang
+                 keduanya memakai hex yang sama persis. --}}
+            <div style="padding:0 22px 18px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1f36;">
-                    <div style="width:12px;height:12px;border-radius:3px;background:#f59f00;"></div> Menunggu ({{ $statusData[0] }})
+                    <div style="width:12px;height:12px;border-radius:3px;background:#b45309;"></div> Menunggu ({{ $statusData[0] }})
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1f36;">
-                    <div style="width:12px;height:12px;border-radius:3px;background:#9c36b5;"></div> Proses ({{ $statusData[1] }})
+                    <div style="width:12px;height:12px;border-radius:3px;background:#6d28d9;"></div> Proses ({{ $statusData[1] }})
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1f36;">
-                    <div style="width:12px;height:12px;border-radius:3px;background:#2f9e44;"></div> Selesai ({{ $statusData[2] }})
+                    <div style="width:12px;height:12px;border-radius:3px;background:#15803d;"></div> Selesai ({{ $statusData[2] }})
                 </div>
             </div>
         </div>

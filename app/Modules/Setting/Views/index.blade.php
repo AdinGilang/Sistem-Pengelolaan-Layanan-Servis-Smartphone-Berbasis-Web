@@ -1,5 +1,6 @@
 <x-app-layout>
     <x-slot name="header">Pengaturan Invoice</x-slot>
+    <x-slot name="backTo">{{ route('dashboard') }}</x-slot>
 
     <div class="max-w-2xl mx-auto">
         <div class="bg-white shadow-md rounded-2xl p-8">
@@ -9,21 +10,20 @@
                 <div class="text-xs text-gray-400 mt-1">Teks ini akan muncul di bagian bawah invoice cetak & PDF</div>
             </div>
 
-            @if(session('success'))
-                <div class="mb-6 px-4 py-3 bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm flex items-center gap-2">
-                    ✅ {{ session('success') }}
-                </div>
-            @endif
+            {{-- Pesan sukses tidak perlu dirender di sini lagi — layout panel
+                 sudah menampilkan toast session('success') yang sama di
+                 bagian atas setiap halaman. Blok ini sebelumnya menampilkan
+                 pesan yang identik dua kali sekaligus di layar. --}}
 
             <form method="POST" action="{{ route('setting.update') }}" class="space-y-6">
                 @csrf
                 @method('PUT')
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="footer_thanks" class="block text-sm font-medium text-gray-700 mb-1">
                         Ucapan Terima Kasih
                     </label>
-                    <input type="text" name="footer_thanks"
+                    <input type="text" name="footer_thanks" id="footer_thanks"
                            value="{{ old('footer_thanks', $settings['footer_thanks']) }}"
                            class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                            placeholder="Terima kasih atas kepercayaan Anda.">
@@ -33,10 +33,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="garansi_servis" class="block text-sm font-medium text-gray-700 mb-1">
                         Garansi Servis
                     </label>
-                    <input type="text" name="garansi_servis"
+                    <input type="text" name="garansi_servis" id="garansi_servis"
                            value="{{ old('garansi_servis', $settings['garansi_servis']) }}"
                            class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                            placeholder="Garansi servis 7 hari setelah pengambilan.">
@@ -47,10 +47,10 @@
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <label for="batas_pengambilan" class="block text-sm font-medium text-gray-700 mb-1">
                         Batas Pengambilan
                     </label>
-                    <input type="text" name="batas_pengambilan"
+                    <input type="text" name="batas_pengambilan" id="batas_pengambilan"
                            value="{{ old('batas_pengambilan', $settings['batas_pengambilan']) }}"
                            class="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                            placeholder="Batas Pengambilan Maksimal 3 Bulan!">

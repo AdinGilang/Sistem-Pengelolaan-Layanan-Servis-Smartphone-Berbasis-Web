@@ -260,14 +260,6 @@
 
             <div class="panel__body">
                 @forelse ($recentServis as $item)
-                    @php
-                        $kelas = match ($item->status) {
-                            'Menunggu' => 'badge--menunggu',
-                            'Proses'   => 'badge--proses',
-                            'Selesai'  => 'badge--selesai',
-                            default    => 'badge--netral',
-                        };
-                    @endphp
                     <a href="{{ route('servis.show', $item) }}" class="antrean">
                         <span class="antrean__ikon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -279,7 +271,7 @@
                             <span class="antrean__nama" style="display:block;">{{ $item->pelanggan }}</span>
                             <span class="antrean__ket" style="display:block;">{{ $item->kerusakan }}</span>
                         </span>
-                        <span class="badge {{ $kelas }}">{{ $item->status }}</span>
+                        <x-status-badge :status="$item->status" />
                     </a>
                 @empty
                     <p class="kosong">Belum ada data servis yang tercatat.</p>

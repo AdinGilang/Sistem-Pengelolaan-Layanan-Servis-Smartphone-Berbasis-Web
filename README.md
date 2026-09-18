@@ -194,8 +194,9 @@ composer dev     # server + queue + log + vite dalam satu perintah
 php artisan test
 ```
 
-99 test mencakup otorisasi antar peran, validasi, pembatasan laju, kebocoran
-data di halaman publik, header keamanan, SEO, dan rendering seluruh halaman.
+112 test mencakup otorisasi antar peran, validasi, pembatasan laju, kebocoran
+data di halaman publik, header keamanan, SEO, kegunaan panel admin (UAT), dan
+rendering seluruh halaman.
 
 ---
 

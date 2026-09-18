@@ -1,8 +1,8 @@
 *.log
 .DS_Store
 .env
-.env.backup
-.env.production
+.env.*
+!.env.example
 .phpactor.json
 .phpunit.result.cache
 /.fleet
@@ -18,7 +18,13 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/logs/*
+!/storage/logs/.gitignore
 /vendor
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Database SQLite lokal — jangan pernah ikut ter-commit, isinya data pelanggan.
+/database/*.sqlite
+/database/*.sqlite-journal

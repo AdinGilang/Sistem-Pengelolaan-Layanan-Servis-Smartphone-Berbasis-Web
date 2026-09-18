@@ -28,6 +28,12 @@
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
+        <!-- Route pendaftaran dinyalakan khusus di lingkungan test agar
+             pengujian bawaan Breeze tetap dapat menguji alurnya. Di server
+             nilainya tetap false (lihat config/auth.php). -->
+        <env name="AUTH_REGISTRATION_ENABLED" value="true"/>
+        <env name="APP_LOCALE" value="id"/>
+        <env name="APP_FALLBACK_LOCALE" value="id"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

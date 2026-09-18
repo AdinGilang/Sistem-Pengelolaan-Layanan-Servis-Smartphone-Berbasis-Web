@@ -1,3 +1,406 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ==========================================================================
+   Token desain
+   --------------------------------------------------------------------------
+   Satu palet untuk seluruh aplikasi. Warna merek dipertahankan (navy + biru)
+   dan sengaja tidak memakai gradien tajam, warna neon, maupun efek kaca —
+   ini perangkat kerja harian yang dipakai berjam-jam, jadi kontras dan
+   keterbacaan didahulukan daripada dekorasi.
+   ========================================================================== */
+
+:root {
+    --navy:        #1a2035;
+    --navy-soft:   #243049;
+    --blue:        #3b5bdb;
+    --blue-dark:   #3049b8;
+    --blue-wash:   rgba(59, 91, 219, .10);
+    --amber:       #b45309;
+    --amber-wash:  rgba(180, 83, 9, .10);
+    --violet:      #6d28d9;
+    --violet-wash: rgba(109, 40, 217, .10);
+    --green:       #15803d;
+    --green-wash:  rgba(21, 128, 61, .10);
+    --red:         #b91c1c;
+    --red-wash:    rgba(185, 28, 28, .10);
+
+    --surface:     #ffffff;
+    --bg:          #f4f6fb;
+    --line:        #e4e8f2;
+    --text:        #1a2035;
+    --muted:       #5c6580;
+
+    /* Sudut membulat yang lembut, bukan kotak tajam dan bukan pil penuh. */
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+
+    /* Bayangan tipis untuk memberi kedalaman tanpa terlihat berat. */
+    --shadow-sm: 0 1px 2px rgba(26, 32, 53, .06);
+    --shadow-md: 0 2px 8px rgba(26, 32, 53, .07);
+    --shadow-lg: 0 8px 24px rgba(26, 32, 53, .10);
+
+    --font-sans:    'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Space Grotesk', var(--font-sans);
+}
+
+/* ==========================================================================
+   Aksesibilitas gerak
+   --------------------------------------------------------------------------
+   Pengguna yang mematikan animasi di sistem operasinya tidak menerima
+   animasi apa pun. Ini juga jaring pengaman performa untuk perangkat lemah.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ==========================================================================
+   Kerangka halaman publik
+   ========================================================================== */
+
+.page {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+}
+
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    background: var(--navy);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 0 0 var(--r-sm) 0;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    left: 0;
+}
+
+/* Fokus keyboard yang selalu terlihat di seluruh elemen interaktif. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+}
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 16px 24px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--navy);
+}
+
+.brand__logo {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+}
+
+.brand__name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: .01em;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.site-main {
+    flex: 1;
+    width: 100%;
+}
+
+.site-footer {
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.site-footer__links {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.site-footer__links a {
+    color: var(--muted);
+    text-decoration: none;
+}
+
+.site-footer__links a:hover {
+    color: var(--blue);
+    text-decoration: underline;
+}
+
+.site-footer__copy {
+    margin: 0;
+}
+
+/* ==========================================================================
+   Tombol
+   ========================================================================== */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: var(--r-sm);
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+.btn svg {
+    width: 17px;
+    height: 17px;
+    flex-shrink: 0;
+}
+
+.btn--solid {
+    background: var(--navy);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn--solid:hover {
+    background: var(--blue);
+}
+
+.btn--ghost {
+    background: transparent;
+    color: var(--navy);
+    border-color: var(--line);
+}
+
+.btn--ghost:hover,
+.btn--ghost.is-active {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: var(--blue-wash);
+}
+
+.btn--lg {
+    padding: 14px 26px;
+    font-size: 15px;
+}
+
+/* ==========================================================================
+   Kartu
+   ========================================================================== */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.card__body {
+    padding: 20px;
+}
+
+/* ==========================================================================
+   Lencana status
+   --------------------------------------------------------------------------
+   Kontras teks terhadap latar dijaga di atas rasio 4.5:1 agar tetap terbaca,
+   termasuk oleh pengguna dengan gangguan persepsi warna.
+   ========================================================================== */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.badge--menunggu { background: var(--amber-wash);  color: var(--amber); }
+.badge--proses   { background: var(--violet-wash); color: var(--violet); }
+.badge--selesai  { background: var(--green-wash);  color: var(--green); }
+.badge--netral   { background: var(--bg);          color: var(--muted); }
+
+/* ==========================================================================
+   Skeleton loader
+   --------------------------------------------------------------------------
+   Dipakai daftar servis saat pencarian langsung berjalan, supaya tabel tidak
+   berkedip kosong dan tinggi halaman tidak melompat.
+   ========================================================================== */
+
+.skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+.skeleton-bar {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #e9edf6 25%, #f2f5fb 37%, #e9edf6 63%);
+    background-size: 400% 100%;
+    animation: skeleton-sweep 1.4s ease infinite;
+}
+
+@keyframes skeleton-sweep {
+    0%   { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
+/* ==========================================================================
+   Tipografi halaman teks (legal, error)
+   ========================================================================== */
+
+.prose-id {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+    line-height: 1.75;
+    color: var(--text);
+}
+
+.prose-id h1 {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 38px);
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 8px;
+}
+
+.prose-id h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+    margin: 36px 0 10px;
+}
+
+.prose-id p,
+.prose-id li {
+    color: var(--muted);
+    font-size: 15px;
+}
+
+.prose-id ul {
+    padding-left: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+/* Butir daftar bertanda centang — dibuat dengan CSS, bukan emoji, supaya
+   tampil konsisten di semua sistem operasi dan tidak dibacakan pembaca layar
+   sebagai kata "tanda centang tebal". */
+.prose-id li {
+    position: relative;
+    padding-left: 28px;
+}
+
+.prose-id li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 8px;
+    width: 11px;
+    height: 6px;
+    border-left: 2px solid var(--green);
+    border-bottom: 2px solid var(--green);
+    transform: rotate(-45deg);
+}
+
+.prose-id__meta {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 28px;
+}
+
+/* ==========================================================================
+   Halaman galat
+   ========================================================================== */
+
+.error-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px;
+    gap: 6px;
+}
+
+.error-page__code {
+    font-family: var(--font-display);
+    font-size: 64px;
+    font-weight: 700;
+    color: var(--blue);
+    line-height: 1;
+}
+
+.error-page__title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+    margin: 8px 0 0;
+}
+
+.error-page__text {
+    color: var(--muted);
+    max-width: 440px;
+    margin: 4px 0 20px;
+}

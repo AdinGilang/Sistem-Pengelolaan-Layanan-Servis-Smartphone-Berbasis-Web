@@ -121,6 +121,74 @@
     animation: pulseDot 2s ease-in-out infinite;
 }
 
+/*
+ * Melayang sangat halus untuk kartu pelacakan.
+ *
+ * Amplitudonya hanya 3px dan satu-satunya properti yang berubah adalah
+ * transform, jadi compositor cukup menggeser layer yang sudah dirasterisasi
+ * — bayangan kartu tidak digambar ulang tiap frame. Ini berbeda jauh dari
+ * gumpalan latar ber-blur 80px yang dulu dihapus (lihat AUDIT.md bagian 2):
+ * blur memaksa rasterisasi ulang, pergeseran transform tidak.
+ */
+@keyframes floatSoft {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+}
+
+/*
+ * Denyut halus pada langkah yang sedang berjalan di garis waktu progres.
+ * Hanya box-shadow pada lingkaran 24px — areanya kecil, bukan elemen besar.
+ */
+@keyframes pulseRing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 91, 219, .35); }
+    50%      { box-shadow: 0 0 0 5px rgba(59, 91, 219, 0); }
+}
+
+/*
+ * Garis penghubung antar langkah yang sudah selesai, tumbuh dari atas ke
+ * bawah. Memakai scaleY, bukan height, supaya tidak memicu layout.
+ */
+@keyframes growLine {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+}
+
+@keyframes spinnerPutar {
+    to { transform: rotate(360deg); }
+}
+
+/*
+ * Tombol dalam keadaan memuat.
+ *
+ * Teksnya disembunyikan dengan opacity (bukan display) supaya lebar tombol
+ * tidak berubah dan tata letak di sekitarnya tidak bergeser saat spinner
+ * muncul.
+ */
+.btn.is-loading {
+    position: relative;
+    pointer-events: none;
+    color: transparent !important;
+}
+
+.btn.is-loading > * { opacity: 0; }
+
+.btn.is-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    color: #fff;
+    animation: spinnerPutar .6s linear infinite;
+}
+
+.btn--ghost.is-loading::after { color: var(--blue); }
+
 /* ==========================================================================
    Kerangka halaman publik
    ========================================================================== */
@@ -269,7 +337,10 @@ textarea:focus-visible {
 /* Sedikit terangkat saat disorot, kembali datar saat ditekan — hanya
    transform, jadi tidak memicu perhitungan ulang tata letak. */
 .btn:hover { transform: translateY(-1px); }
-.btn:active { transform: translateY(0); }
+
+/* Ditekan sedikit mengecil — memberi umpan balik sentuh yang terasa
+   langsung, terutama di layar sentuh yang tidak punya keadaan hover. */
+.btn:active { transform: translateY(0) scale(.98); }
 
 .btn--solid {
     background: var(--navy);

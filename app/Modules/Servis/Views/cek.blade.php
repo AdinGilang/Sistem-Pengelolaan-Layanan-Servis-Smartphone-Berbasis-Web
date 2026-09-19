@@ -71,11 +71,16 @@
             font-size: 15px;
             color: var(--text);
             background: var(--bg);
+            transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
         }
 
+        /* Hanya warna dan bayangan yang berubah; ukuran kolom dibiarkan
+           tetap supaya tidak ada pergeseran tata letak saat difokuskan. */
         .cari__input:focus {
             border-color: var(--blue);
             background: var(--surface);
+            box-shadow: 0 0 0 3px var(--blue-wash);
+            outline: none;
         }
 
         .catatan {
@@ -242,6 +247,13 @@
         .progres__item.is-done .progres__bulat { background: var(--green); color: #fff; }
         .progres__item.is-now  .progres__bulat { background: var(--blue);  color: #fff; }
 
+        /* Denyut halus pada langkah yang sedang berjalan — menandai bahwa
+           perbaikan masih bergerak, bukan berhenti. Hanya box-shadow pada
+           lingkaran 24px, bukan elemen besar. */
+        .progres__item.is-now .progres__bulat {
+            animation: pulseRing 2.4s ease-in-out infinite;
+        }
+
         .progres__garis {
             flex: 1;
             width: 2px;
@@ -249,7 +261,26 @@
             background: var(--line);
         }
 
-        .progres__item.is-done .progres__garis { background: var(--green); }
+        .progres__item.is-done .progres__garis {
+            background: var(--green);
+            /* Garis penghubung tahap yang sudah selesai tumbuh dari atas
+               ke bawah memakai scaleY — bukan height, supaya tidak memicu
+               perhitungan ulang tata letak tiap frame. */
+            transform-origin: top;
+            animation: growLine .45s cubic-bezier(.16, 1, .3, 1) both;
+        }
+
+        /* Tiap langkah muncul menyusul, bukan serentak. */
+        .progres__item {
+            animation: fadeUp .45s cubic-bezier(.16, 1, .3, 1) both;
+        }
+
+        .progres__item:nth-of-type(1) { animation-delay: .10s; }
+        .progres__item:nth-of-type(2) { animation-delay: .19s; }
+        .progres__item:nth-of-type(3) { animation-delay: .28s; }
+
+        .progres__item:nth-of-type(1) .progres__garis { animation-delay: .30s; }
+        .progres__item:nth-of-type(2) .progres__garis { animation-delay: .39s; }
 
         .progres__isi { padding-bottom: 16px; }
 
@@ -282,7 +313,7 @@
 
         <div class="card anim-fade-up" style="animation-delay:.08s">
             <div class="card__body">
-                <form method="GET" action="{{ route('servis.cek') }}" class="cari">
+                <form method="GET" action="{{ route('servis.cek') }}" class="cari" data-loading>
                     <label class="sr-only" for="kode">Kode servis</label>
                     <input
                         id="kode"

@@ -164,6 +164,22 @@
             border-radius: var(--r-lg);
             box-shadow: var(--shadow-lg);
             overflow: hidden;
+
+            /*
+             * Dua animasi berurutan pada satu elemen: masuk sekali dari
+             * kanan, lalu melayang halus tanpa henti. Ditulis di CSS (bukan
+             * lewat kelas + animation-delay inline) karena nilai delay pada
+             * shorthand berlaku per-animasi — menaruhnya di markup akan
+             * membuat animasi kedua ikut memakai delay yang sama dan
+             * bertabrakan dengan animasi masuk.
+             *
+             * Animasi melayang baru mulai setelah animasi masuk selesai,
+             * dan karena keduanya menganimasikan transform, yang terakhir
+             * di daftar inilah yang mengambil alih sesudahnya.
+             */
+            animation:
+                floatInRight .6s cubic-bezier(.16, 1, .3, 1) .18s both,
+                floatSoft 5.5s ease-in-out 1.6s infinite;
         }
 
         .tracker__head {
@@ -208,11 +224,17 @@
             font-size: 15px;
             color: var(--text);
             background: var(--bg);
+            transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
         }
 
+        /* Hanya warna dan bayangan yang berubah — ukuran maupun posisi
+           input dibiarkan tetap, supaya tidak ada pergeseran tata letak
+           saat kolom ini mendapat fokus. */
         .tracker__input:focus {
             border-color: var(--blue);
             background: var(--surface);
+            box-shadow: 0 0 0 3px var(--blue-wash);
+            outline: none;
         }
 
         .tracker__hint {
@@ -325,7 +347,13 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 14px;
+            transition: transform .22s ease;
         }
+
+        /* Ikon ikut membesar sangat tipis saat kartunya disorot — cukup
+           untuk terasa hidup, tidak sampai menggeser teks di bawahnya
+           karena transform tidak memengaruhi tata letak. */
+        .feature:hover .feature__icon { transform: scale(1.04); }
 
         .feature__icon svg {
             width: 21px;
@@ -398,11 +426,32 @@
             color: var(--muted);
         }
 
-        /* Jawaban yang baru dibuka mendapat sedikit gerakan masuk, satu
-           kali saja saat <details> berpindah ke status terbuka. */
-        .faq__item[open] .faq__answer {
-            animation: fadeUp .25s cubic-bezier(.16, 1, .3, 1) both;
+        /*
+         * Buka/tutup yang halus untuk <details>.
+         *
+         * Tingginya dianimasikan lewat grid-template-rows 0fr → 1fr, bukan
+         * max-height dengan angka tebakan. Bedanya penting: jawaban FAQ
+         * panjangnya berbeda-beda, dan max-height yang ditebak terlalu
+         * besar membuat animasi terasa "menggantung" di akhir, sementara
+         * yang terlalu kecil memotong teks. Pendekatan grid menyesuaikan
+         * tinggi sesungguhnya berapa pun isinya.
+         *
+         * Tanpa JavaScript, <details> tetap berfungsi seperti biasa —
+         * hanya terbuka seketika tanpa transisi.
+         */
+        .faq__panel {
+            display: grid;
+            grid-template-rows: 1fr;
+            transition: grid-template-rows .26s cubic-bezier(.16, 1, .3, 1);
         }
+
+        .faq__panel > * {
+            overflow: hidden;
+            min-height: 0;
+            transition: opacity .2s ease;
+        }
+
+        .faq__item[data-menutup="true"] .faq__panel > * { opacity: 0; }
 
         .faq .reveal:nth-child(1) { transition-delay: 0ms; }
         .faq .reveal:nth-child(2) { transition-delay: 60ms; }
@@ -467,22 +516,28 @@
             </div>
 
             {{-- Angka di bawah ini dibaca langsung dari basis data, bukan angka
-                 contoh yang ditulis di template seperti sebelumnya. --}}
+                 contoh yang ditulis di template seperti sebelumnya.
+
+                 Atribut data-hitung menyimpan angka mentahnya untuk animasi
+                 hitung-naik, sementara isi elemennya tetap berupa angka
+                 final yang sudah diformat. Urutan ini disengaja: kalau
+                 JavaScript gagal dimuat, yang terbaca pengunjung tetap
+                 angka asli dari basis data, bukan nol. --}}
             <div class="stats anim-fade-up" style="animation-delay:.32s">
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['total'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['total'] }}">{{ number_format($ringkasan['total'], 0, ',', '.') }}</div>
                     <p class="stats__label">Total unit tercatat</p>
                 </div>
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['menunggu'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['menunggu'] }}">{{ number_format($ringkasan['menunggu'], 0, ',', '.') }}</div>
                     <p class="stats__label">Menunggu antrean</p>
                 </div>
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['proses'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['proses'] }}">{{ number_format($ringkasan['proses'], 0, ',', '.') }}</div>
                     <p class="stats__label">Sedang dikerjakan</p>
                 </div>
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['selesai'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['selesai'] }}">{{ number_format($ringkasan['selesai'], 0, ',', '.') }}</div>
                     <p class="stats__label">Selesai diperbaiki</p>
                 </div>
             </div>
@@ -490,14 +545,14 @@
 
         {{-- Kartu ini bukan gambar hiasan: formulirnya benar-benar mengirim
              ke halaman pelacakan. --}}
-        <div class="tracker anim-float-in" style="animation-delay:.18s">
+        <div class="tracker">
             <div class="tracker__head">
                 <h2 class="tracker__title">Lacak perbaikan Anda</h2>
                 <p class="tracker__sub">Masukkan kode dari nota servis</p>
             </div>
 
             <div class="tracker__body">
-                <form method="GET" action="{{ route('servis.cek') }}">
+                <form method="GET" action="{{ route('servis.cek') }}" data-loading>
                     <label class="tracker__field" for="kode-hero">Kode servis</label>
                     <input
                         id="kode-hero"
@@ -547,7 +602,7 @@
 
     {{-- ══════════════════ FITUR ══════════════════ --}}
     <section class="section" aria-labelledby="judul-fitur">
-        <h2 class="section__title" id="judul-fitur">Yang dikerjakan sistem ini</h2>
+        <h2 class="section__title reveal" id="judul-fitur">Yang dikerjakan sistem ini</h2>
         <p class="section__lead">
             Seluruh proses servis yang dulu dicatat di buku tulis kini terekam rapi,
             dari perangkat masuk sampai invoice tercetak.
@@ -618,14 +673,20 @@
 
     {{-- ══════════════════ FAQ ══════════════════ --}}
     <section class="section" aria-labelledby="judul-faq">
-        <h2 class="section__title" id="judul-faq">Pertanyaan yang sering diajukan</h2>
+        <h2 class="section__title reveal" id="judul-faq">Pertanyaan yang sering diajukan</h2>
         <p class="section__lead">Hal-hal yang paling sering ditanyakan pelanggan sebelum menyervis perangkatnya.</p>
 
         <div class="faq">
             @foreach ($faq as $item)
                 <details class="faq__item reveal" @if ($loop->first) open @endif>
                     <summary>{{ $item['tanya'] }}</summary>
-                    <p class="faq__answer">{{ $item['jawab'] }}</p>
+                    {{-- Pembungkus ini yang tingginya dianimasikan; teks
+                         jawabannya sendiri tidak berubah. --}}
+                    <div class="faq__panel">
+                        <div>
+                            <p class="faq__answer">{{ $item['jawab'] }}</p>
+                        </div>
+                    </div>
                 </details>
             @endforeach
         </div>

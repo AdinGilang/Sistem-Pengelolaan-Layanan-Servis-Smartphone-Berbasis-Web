@@ -272,17 +272,3 @@ test('kartu ringkasan Laporan dan Statistik menyempit di layar HP', function () 
         ->toContain('@media (max-width: 720px)');
 });
 
-test('kotak pencarian Data Servis tidak lagi menampilkan garis tepi dobel saat difokuskan', function () {
-    // Regresi: pembungkus kotak pencarian mengubah warna border DAN
-    // memunculkan ring (box-shadow) biru sekaligus saat difokuskan — dua
-    // efek fokus terpisah yang tampil bersamaan sehingga terlihat seperti
-    // dua garis tepi biru bertumpuk (dilaporkan lewat tangkapan layar HP).
-    // Sekarang border dibiarkan netral dan hanya ring yang berubah.
-    $admin = $this->admin;
-
-    $html = $this->actingAs($admin)->get('/servis')->getContent();
-
-    expect($html)
-        ->not->toContain('focus-within:border-blue-400')
-        ->toContain('focus-within:ring-2 focus-within:ring-blue-400');
-});

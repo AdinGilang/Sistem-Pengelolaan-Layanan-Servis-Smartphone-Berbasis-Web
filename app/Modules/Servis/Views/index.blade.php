@@ -37,6 +37,80 @@
         .aksi-btn--amber:hover  { background: rgba(180, 83, 9, .18); }
         .aksi-btn--red    { background: rgba(185, 28, 28, .1);  color: #b91c1c; }
         .aksi-btn--red:hover    { background: rgba(185, 28, 28, .18); }
+
+        /* Kotak pencarian — dibangun ulang dari nol dengan CSS milik
+           sendiri, bukan lagi tumpukan kelas utility Tailwind (border +
+           ring + overflow-hidden) yang sebelumnya membuat garis tepi
+           terlihat dobel saat kotak difokuskan. Fokus di sini hanya
+           mengubah SATU properti (box-shadow pada wrapper), jadi tidak
+           ada dua efek visual yang bisa saling tumpuk. */
+        .cari {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .cari__kotak {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 42px;
+            padding: 0 12px;
+            background: var(--surface, #fff);
+            border: 1px solid var(--line, #d1d5db);
+            border-radius: var(--r-md, 10px);
+            transition: box-shadow .15s ease;
+        }
+
+        .cari__kotak:focus-within {
+            box-shadow: 0 0 0 3px var(--blue-wash, rgba(59, 91, 219, .18));
+        }
+
+        .cari__ikon {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            color: #9ca3af;
+        }
+
+        .cari__input {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        .cari__input::placeholder { color: #9ca3af; }
+
+        .cari__bersihkan {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .cari__bersihkan:hover { background: #f3f4f6; color: #4b5563; }
+        .cari__bersihkan svg { width: 13px; height: 13px; }
+
+        .cari__hint {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 4px;
+            font-size: 11px;
+            color: #9ca3af;
+        }
     </style>
     @endpush
 
@@ -82,23 +156,19 @@
             <form id="filter-form" method="GET" action="{{ route('servis.index') }}"
                   class="flex flex-col md:flex-row md:items-center flex-wrap gap-3">
 
-                <div class="relative">
-                    {{-- Sebelumnya kotak ini berubah warna border DAN memunculkan
-                         ring (box-shadow) biru sekaligus saat difokuskan — dua
-                         efek fokus terpisah yang tampil bersamaan sehingga
-                         terlihat seperti garis tepi dobel. Border dibiarkan
-                         netral, cukup ring saja sebagai penanda fokus. --}}
-                    <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 transition bg-white">
-                        <div class="pl-3 text-gray-400">
-                            <svg id="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                            </svg>
-                            {{-- Loading spinner (hidden by default) --}}
-                            <svg id="search-spinner" class="hidden animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="10" stroke="#d1d5db" stroke-width="3"/>
-                                <path d="M12 2a10 10 0 0 1 10 10" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-                            </svg>
-                        </div>
+                <div class="cari">
+                    <div class="cari__kotak">
+                        <svg id="search-icon" class="cari__ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+
+                        {{-- Ikon berputar saat menunggu jawaban server, menggantikan ikon kaca pembesar. --}}
+                        <svg id="search-spinner" class="cari__ikon hidden animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10" stroke="#d1d5db" stroke-width="3"/>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+
                         <label class="sr-only" for="live-search">Cari data servis</label>
                         <input
                             id="live-search"
@@ -106,22 +176,25 @@
                             type="text"
                             value="{{ request('search') }}"
                             placeholder="Cari pelanggan, kode, merk HP..."
-                            class="px-3 py-2 w-72 outline-none bg-transparent text-sm"
+                            class="cari__input"
                             autocomplete="off"
                         >
+
                         <button id="clear-search"
-                                class="{{ request('search') ? '' : 'hidden' }} pr-3 text-gray-400 hover:text-gray-600"
                                 type="button"
+                                class="cari__bersihkan {{ request('search') ? '' : 'hidden' }}"
                                 aria-label="Bersihkan pencarian">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                 stroke-linecap="round" aria-hidden="true">
                                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                             </svg>
                         </button>
                     </div>
-                    {{-- Hint text. aria-live memastikan pengguna pembaca layar
-                         juga diberi tahu saat status pencarian berubah, bukan
-                         hanya pengguna yang bisa melihat teksnya. --}}
-                    <div id="search-hint" class="absolute right-0 mt-1 text-xs text-gray-400 hidden" aria-live="polite">
+
+                    {{-- aria-live memastikan pengguna pembaca layar juga diberi
+                         tahu saat status pencarian berubah, bukan hanya
+                         pengguna yang bisa melihat teksnya. --}}
+                    <div id="search-hint" class="cari__hint hidden" aria-live="polite">
                         Mengetik...
                     </div>
                 </div>

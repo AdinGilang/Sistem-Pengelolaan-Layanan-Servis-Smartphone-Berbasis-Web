@@ -252,3 +252,22 @@ test('pratinjau invoice berupa dokumen bersih, bukan kop bergradasi', function (
         ->toContain('Rp 150.000')
         ->toContain('inv-doc');
 });
+
+test('kartu ringkasan Laporan dan Statistik menyempit di layar HP', function () {
+    // Regresi: keempat kartu ringkasan di kedua halaman ini dulu dipaksa
+    // 4 kolom tetap (grid-template-columns:repeat(4,1fr)) tanpa satu pun
+    // media query di seluruh berkas. Di layar HP (~375px), tiap kartu jadi
+    // sekitar 85px lebar — angka seperti "Rp 15.000.000" meluber atau
+    // terpotong.
+    $laporan   = $this->actingAs($this->owner)->get('/laporan')->getContent();
+    $statistik = $this->actingAs($this->owner)->get('/statistik')->getContent();
+
+    expect($laporan)
+        ->toContain('class="laporan-stat-grid"')
+        ->toContain('@media (max-width: 720px)');
+
+    expect($statistik)
+        ->toContain('class="statistik-stat-grid"')
+        ->toContain('class="statistik-chart-row"')
+        ->toContain('@media (max-width: 720px)');
+});

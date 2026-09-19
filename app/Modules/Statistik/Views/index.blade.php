@@ -3,9 +3,43 @@
         Statistik
     </x-slot>
 
+    @push('styles')
+    <style>
+        /* Kartu ringkasan dan baris grafik di halaman ini sebelumnya
+           dipaksa 4 kolom dan 2 kolom tetap (via style inline) tanpa satu
+           pun media query di seluruh berkas. Di layar HP, empat kartu
+           ringkasan jadi terlalu sempit untuk menampung angka rupiah, dan
+           dua grafik yang dipaksa berdampingan jadi terlalu kecil untuk
+           dibaca. Kedua grid di bawah ini sekarang menyempit/menumpuk
+           sendiri sesuai lebar layar. */
+        .statistik-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .statistik-chart-row {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        @media (max-width: 720px) {
+            .statistik-stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .statistik-chart-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 420px) {
+            .statistik-stat-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    @endpush
+
     {{-- ── FILTER TAHUN ── --}}
     <form method="GET" action="{{ route('statistik.index') }}" id="filterForm">
-        <div style="background:#fff;border-radius:14px;padding:16px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);margin-bottom:22px;display:flex;align-items:center;gap:14px;">
+        <div style="background:#fff;border-radius:14px;padding:16px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);margin-bottom:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <label for="filter-tahun" style="font-size:13px;font-weight:600;color:#1a1f36;">Filter Tahun</label>
             <select name="tahun" id="filter-tahun"
                     style="padding:8px 14px;border-radius:8px;border:1.5px solid #e8eaf0;font-size:13px;color:#1a1f36;font-family:inherit;background:#fff;cursor:pointer;">
@@ -26,7 +60,7 @@
     </form>
 
     {{-- ── SUMMARY CARDS ── --}}
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px;">
+    <div class="statistik-stat-grid">
 
         <div style="background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);position:relative;overflow:hidden;">
             <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#3b5bdb;border-radius:14px 14px 0 0;"></div>
@@ -71,7 +105,7 @@
     </div>
 
     {{-- ── ROW 1: Line Chart + Pie Chart ── --}}
-    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px;">
+    <div class="statistik-chart-row">
 
         {{-- Grafik Jumlah Servis per Bulan --}}
         <div style="background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(26,31,54,0.08);overflow:hidden;">

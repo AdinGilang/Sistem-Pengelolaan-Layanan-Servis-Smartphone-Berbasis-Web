@@ -25,6 +25,27 @@
         .aksi-hover { transition: filter .18s ease, background-color .18s ease; }
         a.aksi-hover:hover { filter: brightness(.9); }
         tr.aksi-hover:hover { background: #fafbff; }
+
+        /* Empat kartu ringkasan sebelumnya dipaksa 4 kolom tetap
+           (grid-template-columns:repeat(4,1fr)) tanpa satu pun media query
+           di seluruh halaman ini. Di layar HP (~375px), tiap kartu jadi
+           sekitar 85px — angka seperti "Rp 15.000.000" meluber atau
+           terpotong. Kelas ini menggantikan style inline itu dengan grid
+           yang menyempit sendiri sesuai lebar layar. */
+        .laporan-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        @media (max-width: 720px) {
+            .laporan-stat-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 420px) {
+            .laporan-stat-grid { grid-template-columns: 1fr; }
+        }
     </style>
     @endpush
 
@@ -134,7 +155,7 @@
     </form>
 
     {{-- ── STAT CARDS ── --}}
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px;">
+    <div class="laporan-stat-grid">
 
         {{-- Total Servis --}}
         <div style="background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);position:relative;overflow:hidden;">

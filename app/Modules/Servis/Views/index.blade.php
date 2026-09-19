@@ -1,6 +1,118 @@
 <x-app-layout>
     <x-slot name="header">Data Servis</x-slot>
-    
+
+    @push('styles')
+    <style>
+        /* Kolom Aksi — tombol ikon berwarna menggantikan tautan teks
+           ("Detail Invoice Edit Hapus") yang dulu ditumpuk rapat tanpa
+           jarak jelas, sulit dipindai sekilas di baris tabel yang padat. */
+        .aksi-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .aksi-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background-color .15s ease, transform .15s ease;
+        }
+
+        .aksi-btn svg { width: 15px; height: 15px; }
+        .aksi-btn:hover { transform: translateY(-1px); }
+
+        .aksi-btn--blue   { background: rgba(59, 91, 219, .1);  color: #3b5bdb; }
+        .aksi-btn--blue:hover   { background: rgba(59, 91, 219, .18); }
+        .aksi-btn--purple { background: rgba(147, 51, 234, .1); color: #9333ea; }
+        .aksi-btn--purple:hover { background: rgba(147, 51, 234, .18); }
+        .aksi-btn--amber  { background: rgba(180, 83, 9, .1);   color: #b45309; }
+        .aksi-btn--amber:hover  { background: rgba(180, 83, 9, .18); }
+        .aksi-btn--red    { background: rgba(185, 28, 28, .1);  color: #b91c1c; }
+        .aksi-btn--red:hover    { background: rgba(185, 28, 28, .18); }
+
+        /* Kotak pencarian — dibangun ulang dari nol dengan CSS milik
+           sendiri, bukan lagi tumpukan kelas utility Tailwind (border +
+           ring + overflow-hidden) yang sebelumnya membuat garis tepi
+           terlihat dobel saat kotak difokuskan. Fokus di sini hanya
+           mengubah SATU properti (box-shadow pada wrapper), jadi tidak
+           ada dua efek visual yang bisa saling tumpuk. */
+        .cari {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .cari__kotak {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 42px;
+            padding: 0 12px;
+            background: var(--surface, #fff);
+            border: 1px solid var(--line, #d1d5db);
+            border-radius: var(--r-md, 10px);
+            transition: box-shadow .15s ease;
+        }
+
+        .cari__kotak:focus-within {
+            box-shadow: 0 0 0 3px var(--blue-wash, rgba(59, 91, 219, .18));
+        }
+
+        .cari__ikon {
+            flex-shrink: 0;
+            width: 16px;
+            height: 16px;
+            color: #9ca3af;
+        }
+
+        .cari__input {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 14px;
+            color: #1f2937;
+        }
+
+        .cari__input::placeholder { color: #9ca3af; }
+
+        .cari__bersihkan {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: transparent;
+            color: #9ca3af;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .cari__bersihkan:hover { background: #f3f4f6; color: #4b5563; }
+        .cari__bersihkan svg { width: 13px; height: 13px; }
+
+        .cari__hint {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 4px;
+            font-size: 11px;
+            color: #9ca3af;
+        }
+    </style>
+    @endpush
 
     {{-- Tombol aksi ditentukan ServisPolicy, bukan lagi perbandingan string
          peran di dalam template. Sumber aturannya jadi satu dengan yang
@@ -27,47 +139,66 @@
                 </div>
             @endcan
 
-            {{-- Live Search --}}
-            <div class="relative">
-                <div class="flex items-center border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-400 focus-within:border-blue-400 transition bg-white">
-                    <div class="pl-3 text-gray-400">
-                        <svg id="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        </div>
+
+        {{-- Pencarian & filter.
+
+             Sebelumnya kotak pencarian berdiri sendiri di luar <form> apa
+             pun, murni mengandalkan JavaScript fetch(). Kalau skrip gagal
+             dimuat, menekan Enter di kotak itu tidak melakukan apa-apa —
+             tidak ada jalan mundur. Sekarang kotak pencarian ada DI DALAM
+             form yang sama dengan filter status, jadi menekan Enter tetap
+             mengirim pencarian sungguhan lewat GET biasa walau tanpa
+             JavaScript sama sekali. Saat JavaScript aktif, skrip di
+             partials.live-search cukup mencegat submit itu dan
+             menggantinya dengan fetch() tanpa memuat ulang halaman. --}}
+        <div class="mb-6">
+            <form id="filter-form" method="GET" action="{{ route('servis.index') }}"
+                  class="flex flex-col md:flex-row md:items-center flex-wrap gap-3">
+
+                <div class="cari">
+                    <div class="cari__kotak">
+                        <svg id="search-icon" class="cari__ikon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
                         </svg>
-                        {{-- Loading spinner (hidden by default) --}}
-                        <svg id="search-spinner" class="hidden animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
+
+                        {{-- Ikon berputar saat menunggu jawaban server, menggantikan ikon kaca pembesar. --}}
+                        <svg id="search-spinner" class="cari__ikon hidden animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <circle cx="12" cy="12" r="10" stroke="#d1d5db" stroke-width="3"/>
                             <path d="M12 2a10 10 0 0 1 10 10" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
                         </svg>
-                    </div>
-                    <input
-                        id="live-search"
-                        type="text"
-                        value="{{ request('search') }}"
-                        placeholder="Cari pelanggan, kode, merk HP..."
-                        class="px-3 py-2 w-72 outline-none bg-transparent text-sm"
-                        autocomplete="off"
-                    >
-                    <button id="clear-search"
-                            class="{{ request('search') ? '' : 'hidden' }} pr-3 text-gray-400 hover:text-gray-600"
-                            type="button"
-                            aria-label="Bersihkan pencarian">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-                {{-- Hint text --}}
-                <div id="search-hint" class="absolute right-0 mt-1 text-xs text-gray-400 hidden">
-                    Mengetik...
-                </div>
-            </div>
-        </div>
 
-        <!-- Filter -->
-        <div class="mb-6">
-            <form id="filter-form" method="GET" action="{{ route('servis.index') }}" class="flex flex-wrap gap-3 items-center">
-                <input type="hidden" name="search" id="filter-search-val" value="{{ request('search') }}">
+                        <label class="sr-only" for="live-search">Cari data servis</label>
+                        <input
+                            id="live-search"
+                            name="search"
+                            type="text"
+                            value="{{ request('search') }}"
+                            placeholder="Cari pelanggan, kode, merk HP..."
+                            class="cari__input"
+                            autocomplete="off"
+                        >
+
+                        <button id="clear-search"
+                                type="button"
+                                class="cari__bersihkan {{ request('search') ? '' : 'hidden' }}"
+                                aria-label="Bersihkan pencarian">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                                 stroke-linecap="round" aria-hidden="true">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- aria-live memastikan pengguna pembaca layar juga diberi
+                         tahu saat status pencarian berubah, bukan hanya
+                         pengguna yang bisa melihat teksnya. --}}
+                    <div id="search-hint" class="cari__hint hidden" aria-live="polite">
+                        Mengetik...
+                    </div>
+                </div>
+
                 <label class="sr-only" for="filter-status">Saring berdasarkan status</label>
                 {{-- Pilihan status dibaca dari konstanta model, jadi menambah
                      status baru cukup di satu tempat. --}}
@@ -79,13 +210,18 @@
                 </select>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Filter</button>
                 <a href="{{ route('servis.index') }}" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Reset</a>
-                {{-- Showing result info --}}
-                @if(request('search'))
-                    <span class="text-xs text-gray-500 italic">
+
+                {{-- Info hasil. Diberi id supaya live-search bisa memperbarui
+                     teks ini juga — sebelumnya info ini hanya dirender sekali
+                     saat halaman dimuat penuh, lalu tidak pernah berubah lagi
+                     ketika admin mengetik pencarian baru lewat AJAX, sehingga
+                     angka dan kata kunci yang ditampilkan menjadi basi. --}}
+                <span id="hasil-info" class="text-xs text-gray-500 italic">
+                    @if(request('search'))
                         Hasil pencarian: <strong>"{{ request('search') }}"</strong>
                         — {{ $servis->total() }} data ditemukan
-                    </span>
-                @endif
+                    @endif
+                </span>
             </form>
         </div>
 
@@ -167,38 +303,76 @@
                                 @endif
                             </td>
 
-                            {{-- Status --}}
+                            {{-- Status. Sebelumnya "Proses" berwarna biru di sini,
+                                 padahal ungu di Dashboard dan Laporan — komponen
+                                 ini menjamin warnanya selalu sama di semua halaman. --}}
                             <td class="px-4 py-4 text-center">
-                                @if($s->status == 'Menunggu')
-                                    <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Menunggu</span>
-                                @elseif($s->status == 'Proses')
-                                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Proses</span>
-                                @else
-                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Selesai</span>
-                                @endif
+                                <x-status-badge :status="$s->status" />
                             </td>
 
-                            {{-- Aksi --}}
-                            <td class="px-4 py-4 text-center space-x-2 whitespace-nowrap">
-                                <a href="{{ route('servis.show', $s->id) }}" class="text-blue-600 hover:underline text-xs">Detail</a>
-                                <a href="{{ route('invoice.show', $s->id) }}" class="text-purple-600 hover:underline text-xs">Invoice</a>
+                            {{-- Aksi. Sebelumnya empat tautan teks polos
+                                 ("Detail Invoice Edit Hapus") ditumpuk rapat
+                                 tanpa jarak yang jelas, sulit dipindai sekilas
+                                 dan mudah salah klik di baris yang padat.
+                                 Sekarang tiap aksi jadi tombol ikon berwarna
+                                 dengan tooltip, konsisten satu sama lain. --}}
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                                <div class="aksi-group">
+                                    <a href="{{ route('servis.show', $s->id) }}"
+                                       class="aksi-btn aksi-btn--blue" title="Lihat detail" aria-label="Lihat detail {{ $s->kode_unik }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                            <circle cx="12" cy="12" r="3"/>
+                                        </svg>
+                                    </a>
+                                    <a href="{{ route('invoice.show', $s->id) }}"
+                                       class="aksi-btn aksi-btn--purple" title="Lihat invoice" aria-label="Lihat invoice {{ $s->kode_unik }}">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                            <path d="M14 2v6h6"/><path d="M9 15h6"/><path d="M9 11h6"/>
+                                        </svg>
+                                    </a>
 
-                                @can('update', $s)
-                                    <a href="{{ route('servis.edit', $s->id) }}" class="text-yellow-600 hover:underline text-xs">Edit</a>
-                                @endcan
+                                    @can('update', $s)
+                                        <a href="{{ route('servis.edit', $s->id) }}"
+                                           class="aksi-btn aksi-btn--amber" title="Ubah data" aria-label="Ubah data {{ $s->kode_unik }}">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+                                            </svg>
+                                        </a>
+                                    @endcan
 
-                                @can('delete', $s)
-                                    <form action="{{ route('servis.destroy', $s->id) }}" method="POST" class="inline"
-                                          data-konfirmasi="Hapus data servis {{ $s->kode_unik }}? Data masih dapat dipulihkan dari basis data.">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:underline text-xs">Hapus</button>
-                                    </form>
-                                @endcan
+                                    @can('delete', $s)
+                                        <form action="{{ route('servis.destroy', $s->id) }}" method="POST" class="inline"
+                                              data-konfirmasi="Hapus data servis {{ $s->kode_unik }}? Data masih dapat dipulihkan dari basis data.">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="aksi-btn aksi-btn--red" title="Hapus data" aria-label="Hapus data {{ $s->kode_unik }}">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                                    <path d="M10 11v6"/><path d="M14 11v6"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endcan
+                                </div>
                             </td>
 
                         </tr>
                     @empty
+                        {{-- Dua pesan berbeda untuk dua situasi berbeda. Sebelumnya
+                             kedua situasi ini memakai kalimat yang sama — admin yang
+                             baru pertama kali memakai sistem dan belum sempat
+                             menambah data apa pun tetap dikira "sedang mencari
+                             sesuatu", padahal ia tidak mengetik apa pun. --}}
+                        @php
+                            $adaFilter = filled(request('search')) || filled(request('status'));
+                        @endphp
                         <tr>
                             <td colspan="8" class="text-center py-10 text-gray-500">
                                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -207,7 +381,19 @@
                                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                     <path d="M14 2v6h6"/>
                                 </svg>
-                                Tidak ada data servis yang cocok dengan pencarian Anda.
+                                @if($adaFilter)
+                                    Tidak ada data servis yang cocok dengan pencarian Anda.
+                                    <div class="mt-1">
+                                        <a href="{{ route('servis.index') }}" class="text-blue-600 hover:underline text-xs">Hapus pencarian &amp; filter</a>
+                                    </div>
+                                @else
+                                    Belum ada data servis yang tercatat.
+                                    @can('create', \App\Modules\Servis\Models\Servis::class)
+                                        <div class="mt-1">
+                                            <a href="{{ route('servis.create') }}" class="text-blue-600 hover:underline text-xs">Tambah data servis pertama</a>
+                                        </div>
+                                    @endcan
+                                @endif
                             </td>
                         </tr>
                     @endforelse

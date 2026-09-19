@@ -77,7 +77,7 @@
   <div class="header">
     <div class="header-left">
       <h1>Laporan Servis</h1>
-      <p>ServisApp — dicetak {{ now()->format('d F Y, H:i') }}</p>
+      <p>ServisApp — dicetak {{ now()->translatedFormat('d F Y, H:i') }}</p>
     </div>
     <div class="header-right">
       Periode

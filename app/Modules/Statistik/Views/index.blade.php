@@ -3,18 +3,43 @@
         Statistik
     </x-slot>
 
-    @php
-        $namaBulanPanjang = [
-            1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April',
-            5=>'Mei', 6=>'Juni', 7=>'Juli', 8=>'Agustus',
-            9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember',
-        ];
-    @endphp
+    @push('styles')
+    <style>
+        /* Kartu ringkasan dan baris grafik di halaman ini sebelumnya
+           dipaksa 4 kolom dan 2 kolom tetap (via style inline) tanpa satu
+           pun media query di seluruh berkas. Di layar HP, empat kartu
+           ringkasan jadi terlalu sempit untuk menampung angka rupiah, dan
+           dua grafik yang dipaksa berdampingan jadi terlalu kecil untuk
+           dibaca. Kedua grid di bawah ini sekarang menyempit/menumpuk
+           sendiri sesuai lebar layar. */
+        .statistik-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 22px;
+        }
 
+        .statistik-chart-row {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        @media (max-width: 720px) {
+            .statistik-stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .statistik-chart-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 420px) {
+            .statistik-stat-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+    @endpush
 
     {{-- ── FILTER TAHUN ── --}}
     <form method="GET" action="{{ route('statistik.index') }}" id="filterForm">
-        <div style="background:#fff;border-radius:14px;padding:16px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);margin-bottom:22px;display:flex;align-items:center;gap:14px;">
+        <div style="background:#fff;border-radius:14px;padding:16px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);margin-bottom:22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
             <label for="filter-tahun" style="font-size:13px;font-weight:600;color:#1a1f36;">Filter Tahun</label>
             <select name="tahun" id="filter-tahun"
                     style="padding:8px 14px;border-radius:8px;border:1.5px solid #e8eaf0;font-size:13px;color:#1a1f36;font-family:inherit;background:#fff;cursor:pointer;">
@@ -35,7 +60,7 @@
     </form>
 
     {{-- ── SUMMARY CARDS ── --}}
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px;">
+    <div class="statistik-stat-grid">
 
         <div style="background:#fff;border-radius:14px;padding:20px 22px;box-shadow:0 4px 24px rgba(26,31,54,0.08);position:relative;overflow:hidden;">
             <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#3b5bdb;border-radius:14px 14px 0 0;"></div>
@@ -80,7 +105,7 @@
     </div>
 
     {{-- ── ROW 1: Line Chart + Pie Chart ── --}}
-    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px;">
+    <div class="statistik-chart-row">
 
         {{-- Grafik Jumlah Servis per Bulan --}}
         <div style="background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(26,31,54,0.08);overflow:hidden;">
@@ -102,16 +127,23 @@
             <div style="padding:20px 22px;display:flex;align-items:center;justify-content:center;">
                 <canvas id="chartStatus" height="200" style="max-width:260px;"></canvas>
             </div>
-            {{-- Legend --}}
-            <div style="padding:0 22px 18px;display:flex;gap:16px;justify-content:center;">
+            {{-- Legend.
+
+                 Warna swatch di sini sebelumnya di-hardcode terpisah dari
+                 warna yang benar-benar dipakai Chart.js (resources/js/
+                 statistik.js), sehingga tidak cocok satu sama lain — admin
+                 melihat kotak oranye terang di legenda untuk irisan pie
+                 yang sebenarnya berwarna oranye kecoklatan. Sekarang
+                 keduanya memakai hex yang sama persis. --}}
+            <div style="padding:0 22px 18px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1f36;">
-                    <div style="width:12px;height:12px;border-radius:3px;background:#f59f00;"></div> Menunggu ({{ $statusData[0] }})
+                    <div style="width:12px;height:12px;border-radius:3px;background:#b45309;"></div> Menunggu ({{ $statusData[0] }})
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1f36;">
-                    <div style="width:12px;height:12px;border-radius:3px;background:#9c36b5;"></div> Proses ({{ $statusData[1] }})
+                    <div style="width:12px;height:12px;border-radius:3px;background:#6d28d9;"></div> Proses ({{ $statusData[1] }})
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1a1f36;">
-                    <div style="width:12px;height:12px;border-radius:3px;background:#2f9e44;"></div> Selesai ({{ $statusData[2] }})
+                    <div style="width:12px;height:12px;border-radius:3px;background:#15803d;"></div> Selesai ({{ $statusData[2] }})
                 </div>
             </div>
         </div>

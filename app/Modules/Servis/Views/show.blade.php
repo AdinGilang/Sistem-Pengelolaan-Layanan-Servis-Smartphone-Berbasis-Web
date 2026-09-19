@@ -1,5 +1,6 @@
 <x-app-layout>
     <x-slot name="header">Detail Servis</x-slot>
+    <x-slot name="backTo">{{ route('servis.index') }}</x-slot>
 
     {{-- Hak akses dibaca dari ServisPolicy. Kredensial perangkat (pola kunci
          dan PIN) hanya tampil bagi teknisi; akun pemantau tidak perlu
@@ -14,13 +15,7 @@
                 <div>
                     <div class="flex items-center gap-3 mb-1">
                         <span class="text-2xl font-bold text-gray-800">{{ $servis->pelanggan }}</span>
-                        @if($servis->status == 'Menunggu')
-                            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Menunggu</span>
-                        @elseif($servis->status == 'Proses')
-                            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Proses</span>
-                        @else
-                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Selesai</span>
-                        @endif
+                        <x-status-badge :status="$servis->status" />
                     </div>
                     <div class="flex items-center gap-4 text-sm text-gray-500 flex-wrap">
                         <span class="font-mono font-semibold text-indigo-600">{{ $servis->kode_unik }}</span>
@@ -129,13 +124,7 @@
                 <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
                     <div>
                         <p class="text-xs text-gray-400 mb-0.5">Status</p>
-                        @if($servis->status == 'Menunggu')
-                            <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Menunggu</span>
-                        @elseif($servis->status == 'Proses')
-                            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Proses</span>
-                        @else
-                            <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Selesai</span>
-                        @endif
+                        <x-status-badge :status="$servis->status" />
                     </div>
                     <div>
                         <p class="text-xs text-gray-400 mb-0.5">Biaya</p>
@@ -195,7 +184,7 @@
                         <div style="background:#f8f9ff;border-radius:10px;padding:12px 14px;">
                             <div class="text-xs text-gray-400 mb-1">Tanggal Masuk</div>
                             <div class="font-semibold text-gray-800 text-sm">
-                                {{ $servis->tanggal ? $servis->tanggal->format('d F Y') : '—' }}
+                                {{ $servis->tanggal ? $servis->tanggal->translatedFormat('d F Y') : '—' }}
                             </div>
                         </div>
 
@@ -203,7 +192,7 @@
                         <div style="background:#f8f9ff;border-radius:10px;padding:12px 14px;">
                             <div class="text-xs text-gray-400 mb-1">Estimasi Selesai</div>
                             <div class="font-semibold text-gray-800 text-sm">
-                                {{ $estTgl ? $estTgl->format('d F Y') : '—' }}
+                                {{ $estTgl ? $estTgl->translatedFormat('d F Y') : '—' }}
                             </div>
                             @if($servis->estimasi_hari || $servis->estimasi_jam)
                                 <div class="text-xs text-gray-400 mt-0.5">

@@ -91,6 +91,16 @@
         .role-badge.admin { background: rgba(59, 91, 219, .25); color: #a9bcff; }
         .role-badge.owner { background: rgba(245, 159, 0, .25); color: #ffd98a; }
 
+        /* Warna di atas kontras dirancang untuk latar navy sidebar. Badge
+           yang sama juga dipakai di topbar yang berlatar putih — warna
+           terang di atas latar terang itu jadi pucat dan sulit dibaca
+           (persis seperti terlihat pada tangkapan layar: "ADMIN" tampak
+           kusam dibanding avatar biru di sampingnya). Aturan ini menimpa
+           warnanya khusus saat berada di dalam topbar, tanpa perlu
+           mengubah markup di halaman mana pun yang memakainya. */
+        .topbar .role-badge.admin { background: var(--blue-wash); color: var(--blue-dark); }
+        .topbar .role-badge.owner { background: var(--amber-wash); color: var(--amber); }
+
         .avatar {
             display: flex;
             align-items: center;
@@ -129,6 +139,21 @@
             background: var(--surface);
             border-bottom: 1px solid var(--line);
         }
+
+        .topbar-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--muted);
+            text-decoration: none;
+            margin-bottom: 2px;
+            transition: color .15s ease;
+        }
+
+        .topbar-back:hover { color: var(--blue); }
+        .topbar-back svg { width: 14px; height: 14px; flex-shrink: 0; }
     </style>
 
     @stack('styles')
@@ -280,11 +305,30 @@
                     </svg>
                 </button>
 
-                @isset($header)
-                    <h1 style="font-size:18px;font-weight:700;color:var(--navy);line-height:1.2;margin:0;">
-                        {{ $header }}
-                    </h1>
-                @endisset
+                <div>
+                    {{-- Tautan kembali ditaruh di topbar yang sticky, bukan
+                         hanya di bagian bawah halaman. Sebelumnya halaman
+                         detail dan formulir sepanjang 300-600 baris hanya
+                         punya satu tombol "Kembali" di paling bawah — admin
+                         harus menggulir seluruh halaman dulu untuk kembali
+                         ke daftar. Sekarang tautannya selalu terlihat,
+                         di halaman mana pun posisi gulir sedang berada. --}}
+                    @isset($backTo)
+                        <a href="{{ $backTo }}" class="topbar-back">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>
+                            </svg>
+                            {{ $backLabel ?? 'Kembali' }}
+                        </a>
+                    @endisset
+
+                    @isset($header)
+                        <h1 style="font-size:18px;font-weight:700;color:var(--navy);line-height:1.2;margin:0;">
+                            {{ $header }}
+                        </h1>
+                    @endisset
+                </div>
             </div>
 
             <div class="flex items-center gap-3">

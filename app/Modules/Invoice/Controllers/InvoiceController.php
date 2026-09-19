@@ -3,6 +3,7 @@
 namespace App\Modules\Invoice\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Invoice\Services\InvoicePdfHeight;
 use App\Modules\Servis\Models\Servis;
 use App\Modules\Setting\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -22,9 +23,23 @@ class InvoiceController extends Controller
     {
         $this->authorize('view', $servis);
 
-        // Lebar 164.41pt menyesuaikan kertas thermal 58mm yang dipakai di toko.
-        return Pdf::loadView('invoice::pdf', $this->payload($servis))
-            ->setPaper([0, 0, 164.41, 800], 'portrait')
+        $payload = $this->payload($servis);
+
+        // Tinggi kertas dihitung dari isi sesungguhnya — lihat penjelasan
+        // lengkap di InvoicePdfHeight. Sebelumnya angka 800 ini tetap untuk
+        // setiap invoice; begitu isinya lebih panjang dari yang muat di
+        // 800pt, sisanya terpotong begitu saja tanpa peringatan maupun
+        // halaman kedua. Lebar 164.41pt menyesuaikan kertas thermal 58mm
+        // yang dipakai di toko.
+        $tinggi = InvoicePdfHeight::untuk(
+            $servis,
+            $payload['footerThanks'],
+            $payload['footerGaransi'],
+            $payload['footerBatas'],
+        );
+
+        return Pdf::loadView('invoice::pdf', $payload)
+            ->setPaper([0, 0, InvoicePdfHeight::LEBAR_PT, $tinggi], 'portrait')
             ->download('invoice-' . $servis->kode_unik . '.pdf');
     }
 

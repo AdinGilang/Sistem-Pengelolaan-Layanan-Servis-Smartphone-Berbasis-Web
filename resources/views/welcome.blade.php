@@ -164,6 +164,22 @@
             border-radius: var(--r-lg);
             box-shadow: var(--shadow-lg);
             overflow: hidden;
+
+            /*
+             * Dua animasi berurutan pada satu elemen: masuk sekali dari
+             * kanan, lalu melayang halus tanpa henti. Ditulis di CSS (bukan
+             * lewat kelas + animation-delay inline) karena nilai delay pada
+             * shorthand berlaku per-animasi — menaruhnya di markup akan
+             * membuat animasi kedua ikut memakai delay yang sama dan
+             * bertabrakan dengan animasi masuk.
+             *
+             * Animasi melayang baru mulai setelah animasi masuk selesai,
+             * dan karena keduanya menganimasikan transform, yang terakhir
+             * di daftar inilah yang mengambil alih sesudahnya.
+             */
+            animation:
+                floatInRight .6s cubic-bezier(.16, 1, .3, 1) .18s both,
+                floatSoft 5.5s ease-in-out 1.6s infinite;
         }
 
         .tracker__head {
@@ -208,11 +224,17 @@
             font-size: 15px;
             color: var(--text);
             background: var(--bg);
+            transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
         }
 
+        /* Hanya warna dan bayangan yang berubah — ukuran maupun posisi
+           input dibiarkan tetap, supaya tidak ada pergeseran tata letak
+           saat kolom ini mendapat fokus. */
         .tracker__input:focus {
             border-color: var(--blue);
             background: var(--surface);
+            box-shadow: 0 0 0 3px var(--blue-wash);
+            outline: none;
         }
 
         .tracker__hint {
@@ -299,13 +321,21 @@
             border-radius: var(--r-lg);
             padding: 24px;
             box-shadow: var(--shadow-sm);
-            transition: border-color .18s ease, box-shadow .18s ease;
+            transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
         }
 
         .feature:hover {
             border-color: rgba(59, 91, 219, .35);
             box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
         }
+
+        /* Jeda bertahap murni CSS — kartu pertama muncul lebih dulu,
+           lalu menyusul satu per satu saat digulir. */
+        .features .reveal:nth-child(1) { transition-delay: 0ms; }
+        .features .reveal:nth-child(2) { transition-delay: 70ms; }
+        .features .reveal:nth-child(3) { transition-delay: 140ms; }
+        .features .reveal:nth-child(4) { transition-delay: 210ms; }
 
         .feature__icon {
             width: 42px;
@@ -317,7 +347,13 @@
             align-items: center;
             justify-content: center;
             margin-bottom: 14px;
+            transition: transform .22s ease;
         }
+
+        /* Ikon ikut membesar sangat tipis saat kartunya disorot — cukup
+           untuk terasa hidup, tidak sampai menggeser teks di bawahnya
+           karena transform tidak memengaruhi tata letak. */
+        .feature:hover .feature__icon { transform: scale(1.04); }
 
         .feature__icon svg {
             width: 21px;
@@ -390,6 +426,39 @@
             color: var(--muted);
         }
 
+        /*
+         * Buka/tutup yang halus untuk <details>.
+         *
+         * Tingginya dianimasikan lewat grid-template-rows 0fr → 1fr, bukan
+         * max-height dengan angka tebakan. Bedanya penting: jawaban FAQ
+         * panjangnya berbeda-beda, dan max-height yang ditebak terlalu
+         * besar membuat animasi terasa "menggantung" di akhir, sementara
+         * yang terlalu kecil memotong teks. Pendekatan grid menyesuaikan
+         * tinggi sesungguhnya berapa pun isinya.
+         *
+         * Tanpa JavaScript, <details> tetap berfungsi seperti biasa —
+         * hanya terbuka seketika tanpa transisi.
+         */
+        .faq__panel {
+            display: grid;
+            grid-template-rows: 1fr;
+            transition: grid-template-rows .26s cubic-bezier(.16, 1, .3, 1);
+        }
+
+        .faq__panel > * {
+            overflow: hidden;
+            min-height: 0;
+            transition: opacity .2s ease;
+        }
+
+        .faq__item[data-menutup="true"] .faq__panel > * { opacity: 0; }
+
+        .faq .reveal:nth-child(1) { transition-delay: 0ms; }
+        .faq .reveal:nth-child(2) { transition-delay: 60ms; }
+        .faq .reveal:nth-child(3) { transition-delay: 120ms; }
+        .faq .reveal:nth-child(4) { transition-delay: 180ms; }
+        .faq .reveal:nth-child(n+5) { transition-delay: 220ms; }
+
         @media (max-width: 900px) {
             .hero {
                 grid-template-columns: 1fr;
@@ -415,23 +484,23 @@
     {{-- ══════════════════ HERO ══════════════════ --}}
     <section class="hero">
         <div>
-            <p class="hero__eyebrow">
-                <span class="hero__dot" aria-hidden="true"></span>
+            <p class="hero__eyebrow anim-fade-up">
+                <span class="hero__dot pulse-dot" aria-hidden="true"></span>
                 Layanan servis smartphone
             </p>
 
-            <h1 class="hero__title">
+            <h1 class="hero__title anim-fade-up" style="animation-delay:.08s">
                 Lacak servis HP Anda,<br>
                 <em>tanpa perlu bertanya-tanya</em>
             </h1>
 
-            <p class="hero__lead">
+            <p class="hero__lead anim-fade-up" style="animation-delay:.16s">
                 Setiap perangkat yang masuk ke Phone Repair mendapat kode servis sendiri.
                 Cukup masukkan kodenya untuk melihat progres perbaikan, teknisi yang menangani,
                 dan biaya akhirnya — kapan saja, dari perangkat apa saja.
             </p>
 
-            <div class="hero__cta">
+            <div class="hero__cta anim-fade-up" style="animation-delay:.24s">
                 <a href="{{ route('servis.cek') }}" class="btn btn--solid btn--lg">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -447,22 +516,28 @@
             </div>
 
             {{-- Angka di bawah ini dibaca langsung dari basis data, bukan angka
-                 contoh yang ditulis di template seperti sebelumnya. --}}
-            <div class="stats">
+                 contoh yang ditulis di template seperti sebelumnya.
+
+                 Atribut data-hitung menyimpan angka mentahnya untuk animasi
+                 hitung-naik, sementara isi elemennya tetap berupa angka
+                 final yang sudah diformat. Urutan ini disengaja: kalau
+                 JavaScript gagal dimuat, yang terbaca pengunjung tetap
+                 angka asli dari basis data, bukan nol. --}}
+            <div class="stats anim-fade-up" style="animation-delay:.32s">
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['total'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['total'] }}">{{ number_format($ringkasan['total'], 0, ',', '.') }}</div>
                     <p class="stats__label">Total unit tercatat</p>
                 </div>
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['menunggu'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['menunggu'] }}">{{ number_format($ringkasan['menunggu'], 0, ',', '.') }}</div>
                     <p class="stats__label">Menunggu antrean</p>
                 </div>
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['proses'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['proses'] }}">{{ number_format($ringkasan['proses'], 0, ',', '.') }}</div>
                     <p class="stats__label">Sedang dikerjakan</p>
                 </div>
                 <div class="stats__item">
-                    <div class="stats__value">{{ number_format($ringkasan['selesai'], 0, ',', '.') }}</div>
+                    <div class="stats__value" data-hitung="{{ $ringkasan['selesai'] }}">{{ number_format($ringkasan['selesai'], 0, ',', '.') }}</div>
                     <p class="stats__label">Selesai diperbaiki</p>
                 </div>
             </div>
@@ -477,7 +552,7 @@
             </div>
 
             <div class="tracker__body">
-                <form method="GET" action="{{ route('servis.cek') }}">
+                <form method="GET" action="{{ route('servis.cek') }}" data-loading>
                     <label class="tracker__field" for="kode-hero">Kode servis</label>
                     <input
                         id="kode-hero"
@@ -527,14 +602,14 @@
 
     {{-- ══════════════════ FITUR ══════════════════ --}}
     <section class="section" aria-labelledby="judul-fitur">
-        <h2 class="section__title" id="judul-fitur">Yang dikerjakan sistem ini</h2>
+        <h2 class="section__title reveal" id="judul-fitur">Yang dikerjakan sistem ini</h2>
         <p class="section__lead">
             Seluruh proses servis yang dulu dicatat di buku tulis kini terekam rapi,
             dari perangkat masuk sampai invoice tercetak.
         </p>
 
         <div class="features">
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -548,7 +623,7 @@
                 </p>
             </article>
 
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -564,7 +639,7 @@
                 </p>
             </article>
 
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -579,7 +654,7 @@
                 </p>
             </article>
 
-            <article class="feature">
+            <article class="feature reveal">
                 <div class="feature__icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -598,14 +673,20 @@
 
     {{-- ══════════════════ FAQ ══════════════════ --}}
     <section class="section" aria-labelledby="judul-faq">
-        <h2 class="section__title" id="judul-faq">Pertanyaan yang sering diajukan</h2>
+        <h2 class="section__title reveal" id="judul-faq">Pertanyaan yang sering diajukan</h2>
         <p class="section__lead">Hal-hal yang paling sering ditanyakan pelanggan sebelum menyervis perangkatnya.</p>
 
         <div class="faq">
             @foreach ($faq as $item)
-                <details class="faq__item" @if ($loop->first) open @endif>
+                <details class="faq__item reveal" @if ($loop->first) open @endif>
                     <summary>{{ $item['tanya'] }}</summary>
-                    <p class="faq__answer">{{ $item['jawab'] }}</p>
+                    {{-- Pembungkus ini yang tingginya dianimasikan; teks
+                         jawabannya sendiri tidak berubah. --}}
+                    <div class="faq__panel">
+                        <div>
+                            <p class="faq__answer">{{ $item['jawab'] }}</p>
+                        </div>
+                    </div>
                 </details>
             @endforeach
         </div>

@@ -65,6 +65,131 @@
 }
 
 /* ==========================================================================
+   Animasi halaman publik
+   --------------------------------------------------------------------------
+   Berbeda dari gumpalan latar ber-blur yang dihapus sebelumnya (lihat
+   AUDIT.md bagian 2), animasi di sini mengikuti tiga batasan ketat:
+
+     1. Hanya opacity dan transform — dua properti yang dikerjakan
+        compositor, tidak memicu reflow atau repaint layout.
+     2. Berjalan SEKALI saat elemen muncul, bukan infinite. Begitu selesai,
+        animasi berhenti dan tidak membebani apa pun lagi.
+     3. Pengecualian sengaja: .pulse-dot, satu elemen mungil 6-7px yang
+        hanya beranimasi opacity — biayanya nyaris nol dibanding blob 600px
+        ber-blur 80px yang dihapus.
+
+   Seluruhnya otomatis dimatikan oleh aturan prefers-reduced-motion di atas.
+   ========================================================================== */
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatInRight {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulseDot {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: .35; }
+}
+
+.anim-fade-up  { animation: fadeUp .6s cubic-bezier(.16, 1, .3, 1) both; }
+.anim-float-in { animation: floatInRight .6s cubic-bezier(.16, 1, .3, 1) both; }
+
+/*
+ * Elemen yang "diungkap" saat halaman digulir.
+ *
+ * Progresif dengan sengaja: tanpa .reveal-ready (yang hanya disisipkan
+ * public.js setelah IntersectionObserver siap), elemen tetap tampil penuh
+ * sejak awal. Bila skrip gagal dimuat atau browser tidak mendukungnya,
+ * pengunjung tetap melihat seluruh konten — animasi ini murni hiasan,
+ * bukan syarat supaya sesuatu terlihat.
+ */
+.reveal {
+    transition: opacity .6s cubic-bezier(.16, 1, .3, 1), transform .6s cubic-bezier(.16, 1, .3, 1);
+}
+
+.reveal.reveal-ready  { opacity: 0; transform: translateY(16px); }
+.reveal.reveal-visible { opacity: 1; transform: translateY(0); }
+
+/* Indikator "aktif/langsung" — dipakai pada titik status kecil, bukan
+   elemen layar penuh. */
+.pulse-dot {
+    animation: pulseDot 2s ease-in-out infinite;
+}
+
+/*
+ * Melayang sangat halus untuk kartu pelacakan.
+ *
+ * Amplitudonya hanya 3px dan satu-satunya properti yang berubah adalah
+ * transform, jadi compositor cukup menggeser layer yang sudah dirasterisasi
+ * — bayangan kartu tidak digambar ulang tiap frame. Ini berbeda jauh dari
+ * gumpalan latar ber-blur 80px yang dulu dihapus (lihat AUDIT.md bagian 2):
+ * blur memaksa rasterisasi ulang, pergeseran transform tidak.
+ */
+@keyframes floatSoft {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-3px); }
+}
+
+/*
+ * Denyut halus pada langkah yang sedang berjalan di garis waktu progres.
+ * Hanya box-shadow pada lingkaran 24px — areanya kecil, bukan elemen besar.
+ */
+@keyframes pulseRing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 91, 219, .35); }
+    50%      { box-shadow: 0 0 0 5px rgba(59, 91, 219, 0); }
+}
+
+/*
+ * Garis penghubung antar langkah yang sudah selesai, tumbuh dari atas ke
+ * bawah. Memakai scaleY, bukan height, supaya tidak memicu layout.
+ */
+@keyframes growLine {
+    from { transform: scaleY(0); }
+    to   { transform: scaleY(1); }
+}
+
+@keyframes spinnerPutar {
+    to { transform: rotate(360deg); }
+}
+
+/*
+ * Tombol dalam keadaan memuat.
+ *
+ * Teksnya disembunyikan dengan opacity (bukan display) supaya lebar tombol
+ * tidak berubah dan tata letak di sekitarnya tidak bergeser saat spinner
+ * muncul.
+ */
+.btn.is-loading {
+    position: relative;
+    pointer-events: none;
+    color: transparent !important;
+}
+
+.btn.is-loading > * { opacity: 0; }
+
+.btn.is-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    color: #fff;
+    animation: spinnerPutar .6s linear infinite;
+}
+
+.btn--ghost.is-loading::after { color: var(--blue); }
+
+/* ==========================================================================
    Kerangka halaman publik
    ========================================================================== */
 
@@ -199,7 +324,8 @@ textarea:focus-visible {
     line-height: 1.2;
     text-decoration: none;
     cursor: pointer;
-    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease,
+                box-shadow .18s ease, transform .18s ease;
 }
 
 .btn svg {
@@ -207,6 +333,14 @@ textarea:focus-visible {
     height: 17px;
     flex-shrink: 0;
 }
+
+/* Sedikit terangkat saat disorot, kembali datar saat ditekan — hanya
+   transform, jadi tidak memicu perhitungan ulang tata letak. */
+.btn:hover { transform: translateY(-1px); }
+
+/* Ditekan sedikit mengecil — memberi umpan balik sentuh yang terasa
+   langsung, terutama di layar sentuh yang tidak punya keadaan hover. */
+.btn:active { transform: translateY(0) scale(.98); }
 
 .btn--solid {
     background: var(--navy);
@@ -216,6 +350,7 @@ textarea:focus-visible {
 
 .btn--solid:hover {
     background: var(--blue);
+    box-shadow: var(--shadow-md);
 }
 
 .btn--ghost {
@@ -273,6 +408,18 @@ textarea:focus-visible {
 .badge--proses   { background: var(--violet-wash); color: var(--violet); }
 .badge--selesai  { background: var(--green-wash);  color: var(--green); }
 .badge--netral   { background: var(--bg);          color: var(--muted); }
+
+/*
+ * Varian untuk latar gelap (kop invoice bergradasi navy). Rona warnanya
+ * sama persis dengan varian di atas — hanya kecerahannya dinaikkan supaya
+ * tetap terbaca di atas warna gelap, bukan warna yang ditebak terpisah.
+ * "Proses" sebelumnya malah ditulis biru di sini (lihat AUDIT.md), padahal
+ * di setiap halaman lain warna "Proses" selalu ungu.
+ */
+.badge--menunggu-dark { background: rgba(251, 191, 36, .22); color: #fbbf24; }
+.badge--proses-dark   { background: rgba(167, 139, 250, .22); color: #c4b5fd; }
+.badge--selesai-dark  { background: rgba(74, 222, 128, .22); color: #4ade80; }
+.badge--netral-dark   { background: rgba(255, 255, 255, .14); color: rgba(255, 255, 255, .8); }
 
 /* ==========================================================================
    Skeleton loader

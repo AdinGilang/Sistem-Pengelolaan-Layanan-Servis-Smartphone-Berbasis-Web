@@ -70,7 +70,7 @@
   {{-- HEADER --}}
   <div class="header">
     <h1>Laporan Servis</h1>
-    <p>ServisApp — Dicetak pada {{ now()->format('d F Y, H:i') }}</p>
+    <p>ServisApp — Dicetak pada {{ now()->translatedFormat('d F Y, H:i') }}</p>
     <span class="badge">{{ $namaBulan }} {{ $tahun }}</span>
   </div>
 

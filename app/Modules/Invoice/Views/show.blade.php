@@ -1,148 +1,387 @@
 <x-app-layout>
     <x-slot name="header">Invoice</x-slot>
+    <x-slot name="backTo">{{ route('servis.show', $servis) }}</x-slot>
+    <x-slot name="backLabel">Kembali ke Detail</x-slot>
 
-    <div class="max-w-3xl mx-auto space-y-4">
+    {{--
+        Desain sebelumnya memakai kop bergradasi navy-ke-biru dan kotak total
+        berlatar gelap penuh — pola visual yang lazim dipakai templat dashboard
+        generik, tapi terasa janggal untuk sebuah invoice: dokumen bisnis yang
+        akan dicetak dan diserahkan ke pelanggan. Invoice sungguhan (nota dari
+        toko, faktur dari penyedia layanan) umumnya nyaris monokrom — hitam di
+        atas putih, satu warna aksen dipakai seperlunya, hierarki dibentuk dari
+        ukuran dan bobot huruf, bukan dari kotak warna-warni.
 
-        {{-- Action Buttons --}}
-        <div class="flex justify-end gap-3 print:hidden">
-            <a href="{{ route('servis.index') }}"
-               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 text-sm font-medium">
-                Kembali
-            </a>
-            <a href="{{ route('invoice.cetak', $servis) }}" target="_blank"
-               class="px-4 py-2 bg-gray-800 text-white rounded-xl hover:bg-gray-700 text-sm font-medium inline-flex items-center gap-2">
+        Halaman ini ditulis ulang mengikuti konvensi itu: kop surat sederhana,
+        garis pemisah tipis, tabel rincian biaya yang benar-benar berupa tabel,
+        dan blok total yang ditegaskan lewat garis dan ukuran huruf — bukan
+        kotak gelap. Hasilnya juga lebih ramah dicetak: tidak ada gradasi yang
+        berubah jadi blok abu-abu kusam di atas kertas.
+    --}}
+    @push('styles')
+    <style>
+        .inv-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .inv-doc {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: var(--r-lg);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .inv-doc__head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            padding: 32px 36px 24px;
+        }
+
+        .inv-brand__name {
+            font-family: var(--font-display);
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--navy);
+            letter-spacing: -.01em;
+        }
+
+        .inv-brand__tagline {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .inv-doc__title {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--navy);
+            letter-spacing: .06em;
+            text-align: right;
+        }
+
+        .inv-doc__number {
+            font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+            font-size: 12.5px;
+            color: var(--blue);
+            font-weight: 600;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        .inv-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 16px 36px;
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            background: var(--bg);
+        }
+
+        .inv-strip__item:nth-child(2) { text-align: center; }
+        .inv-strip__item:nth-child(3) { text-align: right; }
+
+        .inv-label {
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .inv-value { font-size: 13.5px; font-weight: 600; color: var(--navy); }
+        .inv-value--lg { font-size: 16px; }
+        .inv-value--muted { font-size: 12.5px; font-weight: 500; color: var(--muted); }
+
+        .inv-body { padding: 28px 36px 32px; }
+
+        .inv-parties {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            margin-bottom: 26px;
+        }
+
+        .inv-parties p { margin: 3px 0 0; }
+
+        .inv-issue { margin-bottom: 26px; }
+
+        .inv-issue p {
+            font-size: 13.5px;
+            color: var(--text);
+            line-height: 1.6;
+            margin: 6px 0 0;
+        }
+
+        .inv-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13.5px;
+        }
+
+        .inv-table thead th {
+            text-align: left;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--muted);
+            padding: 0 0 8px;
+            border-bottom: 2px solid var(--navy);
+        }
+
+        .inv-table thead th:last-child { text-align: right; }
+
+        .inv-table tbody td {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        .inv-table tbody td:last-child {
+            text-align: right;
+            font-weight: 600;
+            color: var(--navy);
+            white-space: nowrap;
+        }
+
+        .inv-item__title { font-weight: 600; color: var(--navy); }
+        .inv-item__sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+        .inv-totals {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 4px;
+        }
+
+        .inv-totals__box { width: 100%; max-width: 260px; }
+
+        .inv-totals__row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 10px 0;
+        }
+
+        .inv-totals__row--grand {
+            border-top: 2px solid var(--navy);
+            margin-top: 2px;
+        }
+
+        .inv-totals__row--grand span:first-child {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--navy);
+        }
+
+        .inv-totals__row--grand span:last-child {
+            font-family: var(--font-display);
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--blue);
+        }
+
+        .inv-foot {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            margin-top: 36px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--line);
+        }
+
+        .inv-foot__notes {
+            font-size: 11.5px;
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 34ch;
+        }
+
+        .inv-foot__notes strong { color: var(--text); font-weight: 600; }
+
+        .inv-sign { text-align: center; flex-shrink: 0; }
+
+        .inv-sign__label {
+            font-size: 10.5px;
+            color: var(--muted);
+            margin-bottom: 44px;
+        }
+
+        .inv-sign__name {
+            font-size: 12px;
+            color: var(--text);
+            font-weight: 600;
+            border-top: 1px solid var(--line);
+            padding-top: 6px;
+            min-width: 120px;
+        }
+
+        @media (max-width: 640px) {
+            .inv-doc__head { flex-direction: column; gap: 14px; }
+            .inv-doc__title, .inv-doc__number { text-align: left; }
+            .inv-strip { grid-template-columns: 1fr; gap: 12px; }
+            .inv-strip__item:nth-child(2), .inv-strip__item:nth-child(3) { text-align: left; }
+            .inv-parties { grid-template-columns: 1fr; }
+            .inv-foot { flex-direction: column; align-items: flex-start; }
+        }
+
+        /* Andai halaman ini dicetak langsung (Ctrl+P) alih-alih lewat tombol
+           Cetak yang menuju /invoice/cetak, dokumennya tetap tampil rapi:
+           tanpa bayangan kartu yang di atas kertas hanya jadi noda abu-abu. */
+        @media print {
+            .inv-doc { box-shadow: none; border: none; }
+        }
+    </style>
+    @endpush
+
+    <div class="max-w-3xl mx-auto">
+
+        <div class="inv-actions print:hidden">
+            <a href="{{ route('invoice.cetak', $servis) }}" target="_blank" class="btn btn--ghost">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 6 2 18 2 18 9"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                </svg>
                 Cetak
             </a>
-            <a href="{{ route('invoice.pdf', $servis) }}"
-               class="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-medium inline-flex items-center gap-2">
-                Download PDF
+            <a href="{{ route('invoice.pdf', $servis) }}" class="btn btn--solid">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Unduh PDF
             </a>
         </div>
 
-        {{-- Invoice Card --}}
-        <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
+        <article class="inv-doc">
 
-            {{-- Header --}}
-            <div style="background:linear-gradient(135deg,#1a1f36 0%,#3b5bdb 100%);padding:32px 40px;">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:1px;">PHONE REPAIR</div>
-                        <div style="color:rgba(255,255,255,0.7);font-size:12px;margin-top:4px;">Jasa Perbaikan Smartphone Profesional</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:2px;">INVOICE</div>
-                        <div style="font-family:monospace;color:#a5b4fc;font-size:13px;margin-top:4px;">{{ $servis->kode_unik }}</div>
-                    </div>
+            {{-- Kop surat --}}
+            <div class="inv-doc__head">
+                <div>
+                    <div class="inv-brand__name">Phone Repair</div>
+                    <div class="inv-brand__tagline">Jasa perbaikan smartphone profesional</div>
                 </div>
-
-                <div style="height:1px;background:rgba(255,255,255,0.2);margin:20px 0;"></div>
-
-                <div class="flex justify-between" style="color:rgba(255,255,255,0.85);font-size:12px;">
-                    <div>
-                        <div style="color:rgba(255,255,255,0.5);margin-bottom:2px;">Tanggal Masuk</div>
-                        <div style="font-weight:600;">{{ $servis->tanggal ? $servis->tanggal->format('d F Y') : '—' }}</div>
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="color:rgba(255,255,255,0.5);margin-bottom:2px;">Status</div>
-                        <div style="font-weight:600;">
-                            @if($servis->status == 'Selesai')
-                                <span style="background:rgba(74,222,128,0.25);color:#4ade80;padding:2px 12px;border-radius:20px;">Selesai</span>
-                            @elseif($servis->status == 'Proses')
-                                <span style="background:rgba(96,165,250,0.25);color:#60a5fa;padding:2px 12px;border-radius:20px;">Proses</span>
-                            @else
-                                <span style="background:rgba(251,191,36,0.25);color:#fbbf24;padding:2px 12px;border-radius:20px;">Menunggu</span>
-                            @endif
-                        </div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div style="color:rgba(255,255,255,0.5);margin-bottom:2px;">Teknisi</div>
-                        <div style="font-weight:600;">{{ $servis->teknisi ?? '—' }}</div>
-                    </div>
+                <div>
+                    <div class="inv-doc__title">Invoice</div>
+                    <div class="inv-doc__number">{{ $servis->kode_unik }}</div>
                 </div>
             </div>
 
-            {{-- Body --}}
-            <div style="padding:32px 40px;">
+            {{-- Info ringkas --}}
+            <div class="inv-strip">
+                <div class="inv-strip__item">
+                    <div class="inv-label">Tanggal</div>
+                    <div class="inv-value">{{ $servis->tanggal ? $servis->tanggal->translatedFormat('d F Y') : '—' }}</div>
+                </div>
+                <div class="inv-strip__item">
+                    <div class="inv-label">Status</div>
+                    <x-status-badge :status="$servis->status" />
+                </div>
+                <div class="inv-strip__item">
+                    <div class="inv-label">Teknisi</div>
+                    <div class="inv-value">{{ $servis->teknisi ?? '—' }}</div>
+                </div>
+            </div>
 
-                {{-- Data Pelanggan & HP --}}
-                <div class="grid grid-cols-2 gap-8 mb-8">
+            <div class="inv-body">
+
+                {{-- Pelanggan & perangkat --}}
+                <div class="inv-parties">
                     <div>
-                        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:#8a93b2;margin-bottom:10px;">DATA PELANGGAN</div>
-                        <div style="font-size:16px;font-weight:700;color:#1a1f36;">{{ $servis->pelanggan }}</div>
+                        <div class="inv-label">Pelanggan</div>
+                        <div class="inv-value inv-value--lg">{{ $servis->pelanggan }}</div>
                         @if($servis->alamat)
-                            <div style="font-size:12px;color:#666;margin-top:4px;">{{ $servis->alamat }}</div>
+                            <p class="inv-value--muted">{{ $servis->alamat }}</p>
                         @endif
                         @if($servis->no_wa)
-                            <div style="font-size:12px;color:#16a34a;margin-top:4px;">{{ $servis->no_wa }}</div>
+                            <p class="inv-value--muted">{{ $servis->no_wa }}</p>
                         @endif
                     </div>
                     <div>
-                        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:#8a93b2;margin-bottom:10px;">DATA HANDPHONE</div>
-                        <div style="font-size:16px;font-weight:700;color:#1a1f36;">{{ $servis->merk_hp ?? '—' }}</div>
-                        <div style="font-size:12px;color:#666;margin-top:2px;">{{ $servis->tipe_hp ?? '' }}</div>
+                        <div class="inv-label">Perangkat</div>
+                        <div class="inv-value inv-value--lg">{{ $servis->merk_hp ?? '—' }}</div>
+                        @if($servis->tipe_hp)
+                            <p class="inv-value--muted">{{ $servis->tipe_hp }}</p>
+                        @endif
                         @php
                             $kel = $servis->kelengkapan;
                             if (is_string($kel)) $kel = json_decode($kel, true) ?? [];
                             $kel = $kel ?? [];
                         @endphp
                         @if(count($kel) > 0)
-                            <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">
-                                @foreach($kel as $item)
-                                    <span style="background:#eff6ff;color:#3b5bdb;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;">{{ $item }}</span>
-                                @endforeach
-                            </div>
+                            <p class="inv-value--muted">Kelengkapan: {{ implode(', ', $kel) }}</p>
                         @endif
                     </div>
                 </div>
 
-                {{-- Kerusakan --}}
-                <div style="background:#f8f9ff;border-radius:12px;padding:16px 20px;margin-bottom:24px;border-left:4px solid #3b5bdb;">
-                    <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:#8a93b2;margin-bottom:6px;">KERUSAKAN</div>
-                    <div style="font-size:13px;color:#333;line-height:1.6;">{{ $servis->kerusakan }}</div>
+                {{-- Keluhan --}}
+                <div class="inv-issue">
+                    <div class="inv-label">Keluhan / kerusakan</div>
+                    <p>{{ $servis->kerusakan }}</p>
                 </div>
 
-                {{-- Tabel Biaya --}}
-                <table style="width:100%;border-collapse:collapse;margin-bottom:16px;">
+                {{-- Rincian biaya --}}
+                <table class="inv-table">
                     <thead>
-                        <tr style="background:#f1f3f9;">
-                            <th style="padding:10px 14px;text-align:left;font-size:11px;color:#8a93b2;font-weight:600;letter-spacing:1px;border-radius:8px 0 0 8px;">DESKRIPSI</th>
-                            <th style="padding:10px 14px;text-align:right;font-size:11px;color:#8a93b2;font-weight:600;letter-spacing:1px;border-radius:0 8px 8px 0;">JUMLAH</th>
+                        <tr>
+                            <th>Deskripsi</th>
+                            <th>Jumlah</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr style="border-bottom:1px solid #f0f0f0;">
-                            <td style="padding:14px;font-size:13px;color:#333;">
-                                <div style="font-weight:600;">Jasa Servis — {{ $servis->merk_hp }} {{ $servis->tipe_hp }}</div>
-                                <div style="font-size:11px;color:#888;margin-top:2px;">{{ $servis->kerusakan }}</div>
+                        <tr>
+                            <td>
+                                <div class="inv-item__title">
+                                    Jasa servis — {{ trim(($servis->merk_hp ?? '') . ' ' . ($servis->tipe_hp ?? '')) ?: 'Perangkat' }}
+                                </div>
+                                <div class="inv-item__sub">{{ $servis->kerusakan }}</div>
                             </td>
-                            <td style="padding:14px;text-align:right;font-size:13px;font-weight:600;color:#1a1f36;">
-                                Rp {{ number_format($servis->biaya ?? 0, 0, ',', '.') }}
-                            </td>
+                            <td>Rp {{ number_format($servis->biaya ?? 0, 0, ',', '.') }}</td>
                         </tr>
                     </tbody>
                 </table>
 
-                {{-- Total --}}
-                <div style="background:#1a1f36;border-radius:12px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
-                    <div style="color:rgba(255,255,255,0.7);font-size:13px;font-weight:600;letter-spacing:1px;">TOTAL PEMBAYARAN</div>
-                    <div style="color:#fff;font-size:22px;font-weight:800;">
-                        Rp {{ number_format($servis->biaya ?? 0, 0, ',', '.') }}
+                <div class="inv-totals">
+                    <div class="inv-totals__box">
+                        <div class="inv-totals__row inv-totals__row--grand">
+                            <span>Total</span>
+                            <span>Rp {{ number_format($servis->biaya ?? 0, 0, ',', '.') }}</span>
+                        </div>
                     </div>
                 </div>
 
-                {{-- Footer --}}
-                <div style="margin-top:32px;padding-top:20px;border-top:1px dashed #e0e0e0;display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-size:11px;color:#aaa;">
-                        Terima kasih telah mempercayakan perangkat Anda kepada kami.<br>
-                        Garansi servis berlaku 7 hari setelah pengambilan.
-                    </div>
-                    <div style="text-align:center;">
-                        <div style="font-size:10px;color:#aaa;margin-bottom:40px;">Tanda Tangan Teknisi</div>
-                        <div style="font-size:11px;color:#555;border-top:1px solid #ccc;padding-top:4px;min-width:100px;">{{ $servis->teknisi ?? 'Teknisi' }}</div>
+                {{--
+                    Sebelumnya bagian ini hanya menampilkan footerThanks dan
+                    footerGaransi — footerBatas (batas waktu pengambilan) sudah
+                    dikirim InvoiceController dan tampil benar di versi cetak
+                    serta PDF, tapi terlewat di pratinjau layar ini. Ketiganya
+                    sekarang konsisten di seluruh tampilan invoice.
+                --}}
+                <div class="inv-foot">
+                    <p class="inv-foot__notes">
+                        {{ $footerThanks }}<br>
+                        {{ $footerGaransi }}<br>
+                        <strong>{{ $footerBatas }}</strong>
+                    </p>
+                    <div class="inv-sign">
+                        <div class="inv-sign__label">Tanda tangan teknisi</div>
+                        <div class="inv-sign__name">{{ $servis->teknisi ?? 'Teknisi' }}</div>
                     </div>
                 </div>
 
             </div>
-        </div>
+        </article>
     </div>
 </x-app-layout>
